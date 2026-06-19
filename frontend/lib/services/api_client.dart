@@ -14,10 +14,11 @@ class ApiClient {
   ApiClient._internal();
 
   String get base {
-    if (const bool.fromEnvironment('isIOS')) return iosBaseUrl;
-    if (const bool.fromEnvironment('isWeb')) return webBaseUrl;
-    return baseUrl;
+    // Web版用localhost
+    return 'http://localhost:3000/api/v1';
   }
+
+  bool get hasToken => _token != null && _token!.isNotEmpty;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();

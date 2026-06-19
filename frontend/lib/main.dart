@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/api_client.dart';
+import 'pages/auth/login_page.dart';
 import 'pages/home/home_page.dart';
 import 'pages/partner/partner_page.dart';
 import 'pages/simulation/simulation_page.dart';
@@ -9,6 +10,7 @@ import 'pages/profile/profile_page.dart';
 import 'pages/chat/chat_page.dart';
 import 'pages/simulation/scenario_detail_page.dart';
 import 'pages/partner/create_partner_page.dart';
+import 'pages/auth/realname_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,9 +38,12 @@ class YuNiApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const MainScaffold(),
+      // 如果有token直接进主页，否则去登录
+      home: ApiClient().hasToken ? const MainScaffold() : const LoginPage(),
       onGenerateRoute: (settings) {
         switch (settings.name) {
+          case '/home':
+            return MaterialPageRoute(builder: (_) => const MainScaffold());
           case '/chat':
             final args = settings.arguments as int;
             return MaterialPageRoute(builder: (_) => ChatPage(partnerId: args));
@@ -47,8 +52,10 @@ class YuNiApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => ScenarioDetailPage(scenarioId: args));
           case '/partner/create':
             return MaterialPageRoute(builder: (_) => const CreatePartnerPage());
+          case '/realname':
+            return MaterialPageRoute(builder: (_) => const RealNameVerifyPage());
           default:
-            return MaterialPageRoute(builder: (_) => const MainScaffold());
+            return MaterialPageRoute(builder: (_) => const LoginPage());
         }
       },
     );
