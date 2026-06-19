@@ -80,7 +80,7 @@ router.post('/send', async (req, res, next) => {
     const messages = history.map(h => ({ role: h.role, content: h.content }));
     
     const systemPrompt = await buildSystemPrompt(partnerId, req.userId);
-    const reply = await llm.chatSync(messages, systemPrompt);
+    const reply = await llm.chatSync(messages, systemPrompt, req.userId, db);
     
     // 保存AI回复
     await db.execute(
@@ -90,7 +90,8 @@ router.post('/send', async (req, res, next) => {
     
     res.json({
       reply: reply.content,
-      provider: reply.provider
+      provider: reply.provider,
+      prompt: reply.shouldPrompt
     });
   } catch (err) {
     next(err);
