@@ -1,25 +1,37 @@
 /**
  * LLM 智能路由引擎
  * 
- * 路由策略（按优先级）：
- *   1. 会员用户 → DeepSeek-Chat（高质量）
- *   2. 首次体验用户（前5次对话） → DeepSeek-Chat（展示能力）
- *   3. 普通用户 → Ollama Qwen2.5:14b（免费）
- *   4. 所有模型不可用 → 固定兜底回复
+ * 按照「与你」PRD第15章商业变现设计：
  * 
- * 升级提醒策略：
- *   - 普通用户每10次对话后弹一次「试试更流畅的对话」
- *   - Ollama响应慢时弹「开通会员加速」
- *   - 首次体验用完DeepSeek次数后弹「继续免费畅聊」
+ * 体验阶段（注册前）：
+ *   → 1次免费体验 → DeepSeek（展示最佳效果）
+ *   → 提示注册
+ * 
+ * 免费用户（注册后）：
+ *   → Ollama Qwen2.5:14b（本地免费模型）
+ *   → 每日3张训练票
+ *   → 第5/20/30次对话弹升级提醒
+ * 
+ * 基础会员（周卡¥9.9）：
+ *   → DeepSeek（高质量对话）
+ *   → 无限训练票
+ * 
+ * 标准会员（月卡¥29.9）：
+ *   → DeepSeek（高质量对话）
+ *   → 全部功能解锁
+ * 
+ * 尊享会员（年卡¥199）：
+ *   → DeepSeek（优先队列，最快响应）
+ *   → 全部功能+自定义形象
  */
 const { OpenAI } = require('openai');
 
 let deepseekClient = null;
 let ollamaClient = null;
 
-// 追踪各用户对话次数（内存计数，重启重置）
-const userChatCounts = new Map();
-const userMembershipCache = new Map();
+// 对话计数（基于内存，重启重置）
+const userDialogueCount = new Map();
+const userModelCache = new Map();
 
 function getDeepSeek() {
   if (!deepseekClient) {
@@ -42,96 +54,123 @@ function getOllama() {
 }
 
 /**
- * 智能选择模型
- * @param {number} userId
- * @param {object} db - 数据库查询方法
- * @returns {{ model: string, shouldPrompt: object|null }}
+ * 获取用户模型分配
  */
-async function selectModel(userId, db) {
-  const result = { model: 'deepseek', shouldPrompt: null };
+async function resolveUserModel(userId, db) {
+  const result = {
+    model: 'ollama',
+    level: 'guest',
+    upgradeHint: null,
+    deepseekPriority: 'normal'
+  };
 
-  try {
-    // 1. 查会员状态（缓存1分钟减轻DB压力）
-    const cached = userMembershipCache.get(userId);
-    let isMember = false;
-    let firstTime = false;
-    let chatCount = userChatCounts.get(userId) || 0;
+  // 体验用户（userId === -1）→ 1次DeepSeek
+  if (userId === -1) {
+    result.model = 'deepseek';
+    result.level = 'trial';
+    result.deepseekPriority = 'trial';
+    result.upgradeHint = {
+      type: 'trial_welcome',
+      message: '这是你的免费体验对话！注册后可以获得更多精彩内容 📱'
+    };
+    return result;
+  }
 
-    if (cached && Date.now() - cached.time < 60000) {
-      isMember = cached.isMember;
-      firstTime = cached.firstTime;
-    } else if (db) {
-      const user = await db.queryOne(
-        'SELECT membership_level FROM users WHERE id = ?', [userId]
-      );
-      isMember = (user?.membership_level || 0) > 0;
-      // 首次体验：总对话次数小于5
-      firstTime = !isMember && chatCount < 5;
-      
-      userMembershipCache.set(userId, { isMember, firstTime, time: Date.now() });
+  const now = Date.now();
+  const cacheKey = `model_${userId}`;
+  const cached = userModelCache.get(cacheKey);
+
+  // 检查缓存（30秒有效）
+  if (cached && (now - cached.ts) < 30000) {
+    const count = userDialogueCount.get(userId) || 0;
+    const nextCount = count + 1;
+    if (cached.data.level === 'free') {
+      if (nextCount === 5) {
+        result.upgradeHint = {
+          type: 'first_upgrade_reminder',
+          message: '聊了5次了！开通周卡只需¥9.9，就能享受更智能的对话体验 💬'
+        };
+      } else if (nextCount === 20) {
+        result.upgradeHint = {
+          type: 'second_upgrade_reminder',
+          message: '你已经和我们聊了20次了！月卡¥29.9解锁全部场景和高质量对话 ✨'
+        };
+      } else if (nextCount > 0 && nextCount % 30 === 0) {
+        result.upgradeHint = {
+          type: 'periodic_upgrade_reminder',
+          message: '聊了这么久，开通会员可以享受更快更贴心的回复哦 ❤️'
+        };
+      }
     }
+    return cached.data;
+  }
 
-    // 计数+1（当前对话）
-    const currentCount = chatCount + 1;
-    userChatCounts.set(userId, currentCount);
+  // 查询会员等级分配模型
+  try {
+    const user = await db.queryOne(
+      'SELECT membership_level FROM users WHERE id = ?', [userId]
+    );
+    const level = user?.membership_level || 0;
 
-    // 2. 路由决策
-    if (isMember) {
-      // 会员 → DeepSeek，无需提醒
+    if (level >= 4) {
+      // 尊享年卡：DeepSeek优先队列
       result.model = 'deepseek';
-    } else if (currentCount <= 5) {
-      // 首次体验用户前5次 → DeepSeek
+      result.level = 'vip4';
+      result.deepseekPriority = 'high';
+    } else if (level >= 2) {
+      // 月卡/周卡：DeepSeek标准
       result.model = 'deepseek';
-      // 第4次时提醒：还有1次体验机会
-      if (currentCount === 4) {
-        result.shouldPrompt = {
-          type: 'first_trial_ending',
-          message: '你已经体验了4次高质量的对话，还有1次免费体验机会哦！之后可以选择继续免费畅聊或开通会员享受更流畅的体验。'
-        };
-      }
+      result.level = level >= 3 ? 'vip3' : 'vip2';
+    } else if (level === 1) {
+      // 基础会员（周卡）：DeepSeek
+      result.model = 'deepseek';
+      result.level = 'vip1';
     } else {
-      // 普通用户 → Ollama
+      // 免费用户：Ollama + 升级提醒
       result.model = 'ollama';
-      
-      // 每10次对话提醒升级
-      if (currentCount > 0 && currentCount % 10 === 0) {
-        result.shouldPrompt = {
-          type: 'upgrade_suggestion',
-          message: '聊了这么久，开通会员可以使用更智能的对话引擎，回复更快更贴心 ❤️'
+      result.level = 'free';
+      const count = userDialogueCount.get(userId) || 0;
+      const nextCount = count + 1;
+      userDialogueCount.set(userId, nextCount);
+
+      if (nextCount === 5) {
+        result.upgradeHint = {
+          type: 'first_upgrade_reminder',
+          message: '聊了5次了！开通周卡只需¥9.9，就能享受更智能的对话体验 💬'
         };
-      }
-      
-      // 首次从DeepSeek降级到Ollama时提醒
-      if (currentCount === 6) {
-        result.shouldPrompt = {
-          type: 'trial_ended',
-          message: '免费体验次数已用完，现在是用本地AI在陪你聊天哦。开通会员可以恢复高质量对话体验！'
+      } else if (nextCount === 20) {
+        result.upgradeHint = {
+          type: 'second_upgrade_reminder',
+          message: '你已经和我们聊了20次了！月卡¥29.9解锁全部场景和高质量对话 ✨'
+        };
+      } else if (nextCount % 30 === 0) {
+        result.upgradeHint = {
+          type: 'periodic_upgrade_reminder',
+          message: '聊了这么久，开通会员可以享受更快更贴心的回复哦 ❤️'
         };
       }
     }
   } catch (err) {
     console.warn('[LLM Router] 查询失败，默认Ollama:', err.message);
-    result.model = 'ollama';
   }
 
+  // 缓存结果
+  userModelCache.set(cacheKey, { ts: now, data: result });
   return result;
 }
 
 /**
- * 同步对话（非流式）
+ * 同步对话
  */
 async function chatSync(messages, systemPrompt = '', userId = null, db = null) {
   const fullMessages = systemPrompt
     ? [{ role: 'system', content: systemPrompt }, ...messages]
     : messages;
 
-  // 智能选模型（内部已处理计数）
-  const route = await selectModel(userId, db);
-  let reply;
-  let provider;
-  let usage = null;
+  const route = await resolveUserModel(userId, db);
 
-  const shouldPrompt = route.shouldPrompt;
+  let reply = null;
+  let provider = '';
 
   if (route.model === 'deepseek' && process.env.DEEPSEEK_API_KEY) {
     try {
@@ -145,14 +184,12 @@ async function chatSync(messages, systemPrompt = '', userId = null, db = null) {
       });
       reply = response.choices[0].message.content;
       provider = 'deepseek';
-      usage = response.usage;
     } catch (err) {
-      console.warn('[LLM] DeepSeek 生成失败，降级到本地:', err.message);
-      route.model = 'ollama';
+      console.warn('[LLM] DeepSeek 失败，降级Ollama:', err.message);
     }
   }
 
-  if (route.model === 'ollama' || !reply) {
+  if (!reply) {
     try {
       const client = getOllama();
       const response = await client.chat.completions.create({
@@ -165,13 +202,18 @@ async function chatSync(messages, systemPrompt = '', userId = null, db = null) {
       reply = response.choices[0].message.content;
       provider = 'ollama';
     } catch (err) {
-      console.error('[LLM] 所有模型都失败:', err.message);
+      console.error('[LLM] 所有模型失败:', err.message);
       reply = '抱歉，我现在有点累，等会儿再聊好吗？';
       provider = 'fallback';
     }
   }
 
-  return { content: reply, provider, usage, shouldPrompt };
+  return {
+    content: reply,
+    provider,
+    level: route.level,
+    upgradeHint: route.upgradeHint
+  };
 }
 
 async function checkDeepSeekHealth() {
@@ -191,4 +233,4 @@ async function checkDeepSeekHealth() {
   }
 }
 
-module.exports = { getDeepSeek, getOllama, checkDeepSeekHealth, chatSync, selectModel };
+module.exports = { getDeepSeek, getOllama, checkDeepSeekHealth, chatSync, resolveUserModel };

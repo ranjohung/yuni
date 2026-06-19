@@ -80,6 +80,7 @@ async function initTables() {
       membership_expire DATETIME NULL,
       daily_usage_minutes INT DEFAULT 0,
       last_usage_date DATE NULL,
+      trial_conversations INT DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

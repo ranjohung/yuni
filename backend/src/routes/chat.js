@@ -91,7 +91,8 @@ router.post('/send', async (req, res, next) => {
     res.json({
       reply: reply.content,
       provider: reply.provider,
-      prompt: reply.shouldPrompt
+      level: reply.level,
+      upgradeHint: reply.upgradeHint
     });
   } catch (err) {
     next(err);

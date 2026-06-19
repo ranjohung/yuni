@@ -13,6 +13,30 @@ const db = require('../config/database');
 const auth = require('../middleware/auth');
 const { generateToken } = require('../middleware/auth');
 
+// 体验登录（无需注册，直接给临时token）
+router.post('/trial', async (req, res, next) => {
+  try {
+    // 生成临时体验token（userId = -1 表示体验用户）
+    const trialId = -1;
+    const token = generateToken(trialId);
+    
+    // 预置体验伴侣信息
+    res.json({
+      message: '欢迎体验「与你」！你可以免费进行一次高质量的对话',
+      token,
+      trialRemaining: 1,
+      partner: {
+        name: '沈清欢',
+        coreType: 'pursuer',
+        coreTypeName: '追寻者',
+        description: '她总是第一个发现你情绪变化的人'
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // 注册
 router.post('/register', async (req, res, next) => {
   try {
