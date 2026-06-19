@@ -23,7 +23,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// 路由（公开）
+// 路由（公开 - 无需认证）
 app.use('/api/v1/user', require('./routes/user'));
 
 // 路由（需认证）
