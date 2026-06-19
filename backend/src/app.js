@@ -1,6 +1,7 @@
 /**
  * 「与你」App 后端入口
  * Node.js + Express
+ * v1.1 - 加入日志审计、敏感词过滤、错误码标准化、请求日志
  */
 
 require('dotenv').config();
@@ -9,18 +10,26 @@ const cors = require('cors');
 const { initDatabase } = require('./config/database');
 const { initRedis } = require('./config/redis');
 const authMiddleware = require('./middleware/auth');
+const { logger, requestLogger } = require('./middleware/logger');
+const { errorHandler, notFoundHandler, success } = require('./config/errors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 中间件
-app.use(cors());
+// 注入logger到app locals供路由使用
+app.locals.logger = logger;
+
+// 基础中间件
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// 请求日志中间件（每请求记录）
+app.use(requestLogger);
 
 // 健康检查
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json(success({ status: 'ok', time: new Date().toISOString() }));
 });
 
 // 路由（公开 - 无需认证）
@@ -36,30 +45,23 @@ app.use('/api/v1/talent', authMiddleware, require('./routes/talent'));
 app.use('/api/v1/membership', authMiddleware, require('./routes/membership'));
 app.use('/api/v1/compliance', authMiddleware, require('./routes/compliance'));
 
-// 错误处理
-app.use((err, req, res, next) => {
-  console.error('[Error]', err.message);
-  res.status(err.status || 500).json({
-    error: err.message || '服务器内部错误',
-    code: err.code || 'INTERNAL_ERROR'
-  });
-});
+// 404处理
+app.use(notFoundHandler);
+
+// 全局错误处理
+app.use(errorHandler);
 
 // 启动服务
 async function start() {
   try {
     await initDatabase();
-    console.log('[DB] MySQL 连接成功');
-    
     await initRedis();
-    console.log('[Redis] 连接成功');
     
     app.listen(PORT, () => {
-      console.log(`[Server] 「与你」后端运行在 http://localhost:${PORT}`);
-      console.log(`[Server] 环境: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`'与你' 后端启动`, { port: PORT, env: process.env.NODE_ENV || 'development' });
     });
   } catch (err) {
-    console.error('[Fatal] 启动失败:', err.message);
+    logger.fatal('服务启动失败', { error: err.message });
     process.exit(1);
   }
 }

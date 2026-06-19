@@ -8,6 +8,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const llm = require('../config/llm');
+const { sanitizeMessage, sanitize } = require('../middleware/validator');
+const { checkText, checkAiReply } = require('../middleware/sensitive');
+const { success, error, ERROR_CODES } = require('../config/errors');
 
 // 获取系统提示词
 async function buildSystemPrompt(partnerId, userId) {
@@ -59,13 +62,27 @@ async function buildSystemPrompt(partnerId, userId) {
 // 发送消息（非流式）
 router.post('/send', async (req, res, next) => {
   try {
-    const { partnerId, message } = req.body;
+    const { partnerId, message: rawMessage } = req.body;
     
-    if (!partnerId || !message) {
-      return res.status(400).json({ error: '参数不完整', code: 'PARAM_MISSING' });
+    // === 输入校验 ===
+    if (!partnerId || !rawMessage) {
+      return res.status(400).json(error(ERROR_CODES.MISSING_PARAMS));
+    }
+    const message = sanitizeMessage(rawMessage);
+    if (!message || message.length < 1) {
+      return res.status(400).json(error(ERROR_CODES.INVALID_PARAMS));
     }
     
+    // === 敏感词过滤 ===
+    const check = checkText(message);
+    if (check.level === 'block') {
+      return res.status(403).json(error(ERROR_CODES.SENSITIVE_CONTENT));
+    }
+    
+    const logger = req.app.locals.logger;
+    
     // 保存用户消息
+    logger.info('Chat send', { partnerId, userId: req.userId, len: message.length });
     await db.execute(
       'INSERT INTO chat_history (partner_id, user_id, role, content) VALUES (?, ?, ?, ?)',
       [partnerId, req.userId, 'user', message]
@@ -82,17 +99,32 @@ router.post('/send', async (req, res, next) => {
     const systemPrompt = await buildSystemPrompt(partnerId, req.userId);
     const reply = await llm.chatSync(messages, systemPrompt, req.userId, db);
     
+    // === AI回复敏感词检查 ===
+    const aiCheck = checkAiReply(reply.content);
+    if (!aiCheck.pass) {
+      logger.warn('AI reply blocked', { reason: aiCheck.reason });
+      reply.content = '我觉得我们还是聊聊别的吧。';
+    }
+    
     // 保存AI回复
     await db.execute(
       'INSERT INTO chat_history (partner_id, user_id, role, content) VALUES (?, ?, ?, ?)',
       [partnerId, req.userId, 'assistant', reply.content]
     );
     
+    // 如果有低危词触发，返回cbtNotice
+    const resp = { ...reply };
+    const msgCheck = checkText(message);
+    if (msgCheck.level === 'cbt') {
+      resp.cbtNotice = true;
+    }
+    
     res.json({
-      reply: reply.content,
-      provider: reply.provider,
-      level: reply.level,
-      upgradeHint: reply.upgradeHint
+      reply: resp.content,
+      provider: resp.provider,
+      level: resp.level,
+      cbtNotice: resp.cbtNotice || false,
+      upgradeHint: resp.upgradeHint
     });
   } catch (err) {
     next(err);
