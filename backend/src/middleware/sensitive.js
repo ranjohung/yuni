@@ -47,6 +47,33 @@ const LOW_RISK = [
   '永远都', '总是这样', '从来没有', '彻底失败',
 ];
 
+// CBT关键词映射（绝对化/灾难化/自我否定）
+const CBT_KEYWORDS = {
+  // 绝对化词语
+  '总是': { type: 'absolute', message: '试试用具体描述代替绝对化词语，比如"这次没做好"比"我总是做不好"更客观' },
+  '从不': { type: 'absolute', message: '试试用具体描述代替绝对化词语，比如"这次没成功"比"我从不会成功"更客观' },
+  '永远': { type: 'absolute', message: '试试用具体描述代替绝对化词语，比如"这次很难"比"永远都很难"更客观' },
+  '每次都': { type: 'absolute', message: '试试用具体描述代替绝对化词语，避免过度概括' },
+  '全部': { type: 'absolute', message: '试试用具体描述代替绝对化词语，避免以偏概全' },
+  '所有': { type: 'absolute', message: '试试用具体描述代替绝对化词语，避免以偏概全' },
+  '完全': { type: 'absolute', message: '试试用具体描述代替绝对化词语，避免极端化表达' },
+  
+  // 灾难化词语
+  '完了': { type: 'catastrophic', message: '那个最坏结果，真的100%会发生吗？我们来理性分析一下' },
+  '死定了': { type: 'catastrophic', message: '那个最坏结果，真的100%会发生吗？事情可能还有转机' },
+  '毁了': { type: 'catastrophic', message: '那个最坏结果，真的100%会发生吗？我们来看看有哪些解决办法' },
+  '完蛋': { type: 'catastrophic', message: '那个最坏结果，真的100%会发生吗？不要过早下定论' },
+  '彻底完了': { type: 'catastrophic', message: '那个最坏结果，真的100%会发生吗？我们一起找找出路' },
+  
+  // 自我否定
+  '我不行': { type: 'self_negation', message: '先别急着否定自己，我们来看看事实是什么' },
+  '我太差': { type: 'self_negation', message: '先别急着否定自己，每个人都有成长的空间' },
+  '我没用': { type: 'self_negation', message: '先别急着否定自己，你已经很努力了' },
+  '我做不到': { type: 'self_negation', message: '先别急着否定自己，我们可以一步步来尝试' },
+  '我什么都做不好': { type: 'self_negation', message: '先别急着否定自己，每个人都有擅长的地方' },
+  '我不配': { type: 'self_negation', message: '先别急着否定自己，你值得被好好对待' },
+};
+
 // AI禁止触发的亲密内容
 const AI_FORBIDDEN = [
   '我爱你', '做我女朋友', '嫁给我', '亲一个',
@@ -112,6 +139,29 @@ function checkText(text) {
 }
 
 /**
+ * 检测CBT关键词并返回引导建议
+ * @param {string} text - 要检查的文本
+ * @returns {{ found: boolean, messages: string[] }}
+ */
+function detectCbtKeywords(text) {
+  if (!text || typeof text !== 'string') {
+    return { found: false, messages: [] };
+  }
+
+  const foundMessages = [];
+  for (const [keyword, config] of Object.entries(CBT_KEYWORDS)) {
+    if (text.includes(keyword)) {
+      foundMessages.push(config.message);
+    }
+  }
+
+  return {
+    found: foundMessages.length > 0,
+    messages: foundMessages.slice(0, 2)
+  };
+}
+
+/**
  * 检查AI回复是否越界
  */
 function checkAiReply(text) {
@@ -132,4 +182,4 @@ function checkAiReply(text) {
   return { pass: true, reason: '' };
 }
 
-module.exports = { checkText, checkAiReply, HIGH_RISK, MEDIUM_RISK, LOW_RISK, AI_FORBIDDEN };
+module.exports = { checkText, checkAiReply, detectCbtKeywords, HIGH_RISK, MEDIUM_RISK, LOW_RISK, AI_FORBIDDEN, CBT_KEYWORDS };

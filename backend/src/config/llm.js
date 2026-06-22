@@ -25,13 +25,16 @@
  *   → 全部功能+自定义形象
  */
 const { OpenAI } = require('openai');
+const { cacheGet, cacheSet } = require('./redis');
 
 let deepseekClient = null;
 let ollamaClient = null;
 
-// 对话计数（基于内存，重启重置）
+// 对话计数（优先使用Redis，内存作为降级缓存）
 const userDialogueCount = new Map();
 const userModelCache = new Map();
+
+const CACHE_PREFIX = 'llm:';
 
 function getDeepSeek() {
   if (!deepseekClient) {
@@ -82,9 +85,10 @@ async function resolveUserModel(userId, db) {
 
   // 检查缓存（30秒有效）
   if (cached && (now - cached.ts) < 30000) {
-    const count = userDialogueCount.get(userId) || 0;
+    const count = await getDialogueCount(userId);
     const nextCount = count + 1;
     if (cached.data.level === 'free') {
+      await setDialogueCount(userId, nextCount);
       if (nextCount === 5) {
         result.upgradeHint = {
           type: 'first_upgrade_reminder',
@@ -129,9 +133,9 @@ async function resolveUserModel(userId, db) {
       // 免费用户：Ollama + 升级提醒
       result.model = 'ollama';
       result.level = 'free';
-      const count = userDialogueCount.get(userId) || 0;
+      const count = await getDialogueCount(userId);
       const nextCount = count + 1;
-      userDialogueCount.set(userId, nextCount);
+      await setDialogueCount(userId, nextCount);
 
       if (nextCount === 5) {
         result.upgradeHint = {
@@ -233,4 +237,28 @@ async function checkDeepSeekHealth() {
   }
 }
 
-module.exports = { getDeepSeek, getOllama, checkDeepSeekHealth, chatSync, resolveUserModel };
+async function getDialogueCount(userId) {
+  const key = `${CACHE_PREFIX}dialogue_count:${userId}`;
+  const cached = await cacheGet(key);
+  if (cached !== null) {
+    return cached;
+  }
+  const memoryValue = userDialogueCount.get(userId) || 0;
+  return memoryValue;
+}
+
+async function setDialogueCount(userId, count) {
+  const key = `${CACHE_PREFIX}dialogue_count:${userId}`;
+  await cacheSet(key, count, 86400);
+  userDialogueCount.set(userId, count);
+}
+
+module.exports = { 
+  getDeepSeek, 
+  getOllama, 
+  checkDeepSeekHealth, 
+  chatSync, 
+  resolveUserModel,
+  getDialogueCount,
+  setDialogueCount
+};

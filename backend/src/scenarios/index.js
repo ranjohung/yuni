@@ -290,6 +290,282 @@ const SCENARIOS = [
         ]
       }
     ]
+  },
+  {
+    id: 7,
+    title: '向心仪对象表白',
+    stage: 3,
+    stageName: '普通朋友→好朋友（熟悉期）',
+    difficulty: 4,
+    durationMinutes: 12,
+    skill: '真诚表达、氛围营造、风险准备',
+    background: '你暗恋了很久的同事/同学，你们关系不错，今天你决定鼓起勇气表白。',
+    atmosphere: '傍晚的公园，夕阳余晖，你们坐在湖边的长椅上，远处有孩童嬉闹的声音。',
+    rounds: [
+      {
+        index: 0,
+        title: '铺垫',
+        aiLine: '今天夕阳真美啊...最近感觉你好像有什么心事？',
+        teaching: '表白前先确认对方状态，营造轻松氛围',
+        choices: [
+          { text: '是啊，我确实有件事想告诉你很久了...你愿意听吗？', quality: 'high', affinity: 5, feedback: '先铺垫让对方有心理准备，很得体' },
+          { text: '没有啊，挺好的', quality: 'normal', affinity: 0, feedback: '可以更直接一点表达你想说话' },
+          { text: '我喜欢你！', quality: 'low', affinity: -5, feedback: '太突然了，对方可能没有心理准备' }
+        ]
+      },
+      {
+        index: 1,
+        title: '表白',
+        aiLine: '（看向你）嗯，你说吧，我听着。',
+        teaching: '真诚表达感受，不要给对方压力',
+        choices: [
+          { text: '和你在一起的时光很开心，我发现自己慢慢喜欢上你了。如果你没有同样的感觉也没关系，我只是想让你知道我的心意', quality: 'high', affinity: 8, feedback: '真诚且不给压力，是最好的表白方式' },
+          { text: '我喜欢你，做我女朋友/男朋友吧', quality: 'normal', affinity: 3, feedback: '直接但有点压力，可以补充说明' },
+          { text: '你觉得我怎么样？', quality: 'low', affinity: -3, feedback: '太隐晦了，对方可能听不懂你的意思' }
+        ]
+      },
+      {
+        index: 2,
+        title: '等待回应',
+        aiLine: '（沉默了一会儿）我...需要时间想想',
+        teaching: '尊重对方的思考时间，保持风度',
+        choices: [
+          { text: '当然，我理解。你不用急着回答，我会等你的', quality: 'high', affinity: 8, feedback: '给对方空间，体现你的成熟和尊重' },
+          { text: '那你要想多久？', quality: 'normal', affinity: 0, feedback: '不要催对方，耐心等待是尊重' },
+          { text: '是不是我太唐突了？如果你不愿意就直说吧', quality: 'low', affinity: -5, feedback: '不要让对方感到压力' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 8,
+    title: '团队协作讨论',
+    stage: 2,
+    stageName: '认识→普通朋友（接触期）',
+    difficulty: 3,
+    durationMinutes: 12,
+    skill: '积极倾听、建设性反馈、协作沟通',
+    background: '项目组正在讨论一个重要决策，团队成员意见分歧很大。',
+    atmosphere: '会议室里气氛有些紧张，白板上写满了各种想法，有人在皱眉思考。',
+    rounds: [
+      {
+        index: 0,
+        title: '观点冲突',
+        aiLine: '（同事A）我觉得方案A更好，效率更高！（同事B）但是方案B更稳妥，风险更低！',
+        teaching: '冲突时先总结各方观点，找到共同点',
+        choices: [
+          { text: '我理解A关注效率，B关注风险，其实我们可以看看有没有办法兼顾两者？', quality: 'high', affinity: 5, feedback: '先理解各方立场，再寻求共识，很好的协调能力' },
+          { text: '我觉得方案A挺好的', quality: 'normal', affinity: 0, feedback: '直接站队会让讨论更对立' },
+          { text: '你们别吵了，听我的', quality: 'low', affinity: -8, feedback: '命令式语气会引起反感' }
+        ]
+      },
+      {
+        index: 1,
+        title: '提出建议',
+        aiLine: '那你觉得具体怎么兼顾？',
+        teaching: '用"我们"代替"我"，营造团队感',
+        choices: [
+          { text: '我们可以先用方案B的框架保证稳定性，在关键节点引入方案A的优化思路，这样既能控制风险又能提升效率', quality: 'high', affinity: 5, feedback: '用"我们"营造归属感，具体建议有说服力' },
+          { text: '我觉得可以折中一下', quality: 'normal', affinity: 0, feedback: '太笼统了，需要具体方案' },
+          { text: '你们俩的方案都有问题', quality: 'low', affinity: -8, feedback: '否定式沟通会伤害团队氛围' }
+        ]
+      },
+      {
+        index: 2,
+        title: '达成共识',
+        aiLine: '这个思路听起来不错，但谁来负责具体落地呢？',
+        teaching: '明确分工，推动行动',
+        choices: [
+          { text: '我可以负责梳理需求和排期，A你负责效率优化部分，B你负责风险评估，我们每周同步一次进度怎么样？', quality: 'high', affinity: 5, feedback: '明确分工+时间节点，推动执行' },
+          { text: '我们一起做吧', quality: 'normal', affinity: 0, feedback: '需要更具体的分工' },
+          { text: '领导来定吧', quality: 'low', affinity: -5, feedback: '推卸责任，不是好的团队成员' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 9,
+    title: '商务谈判',
+    stage: 3,
+    stageName: '普通朋友→好朋友（熟悉期）',
+    difficulty: 5,
+    durationMinutes: 15,
+    skill: '利益分析、让步策略、双赢思维',
+    background: '你代表公司与供应商谈合作，对方报价超出预算，需要达成双方都满意的协议。',
+    atmosphere: '正式的商务会议室，桌上摆放着资料和茶水，对方代表表情严肃。',
+    rounds: [
+      {
+        index: 0,
+        title: '开局',
+        aiLine: '我们的报价已经很优惠了，这个价格真的不能再降了',
+        teaching: '先了解对方的底线和需求',
+        choices: [
+          { text: '我理解贵方的定价考虑。能否分享一下这个报价的成本构成？我们也想找到双方都满意的方案', quality: 'high', affinity: 5, feedback: '先表示理解再提问，建立信任' },
+          { text: '这个价格太高了，我们接受不了', quality: 'normal', affinity: 0, feedback: '直接否定会让对方防御' },
+          { text: '那我们没法合作了', quality: 'low', affinity: -10, feedback: '威胁式沟通会破坏谈判氛围' }
+        ]
+      },
+      {
+        index: 1,
+        title: '讨价还价',
+        aiLine: '好吧，看在长期合作的份上，我们可以降5%',
+        teaching: '有条件让步，创造交换空间',
+        choices: [
+          { text: '非常感谢！如果贵方能再降3%，我们可以把合同期限延长到3年，并且优先考虑贵方的新产品', quality: 'high', affinity: 5, feedback: '有条件让步，创造双赢局面' },
+          { text: '再便宜点吧', quality: 'normal', affinity: 0, feedback: '没有筹码的讨价还价缺乏说服力' },
+          { text: '才降5%？你们太不真诚了', quality: 'low', affinity: -8, feedback: '指责对方会让谈判陷入僵局' }
+        ]
+      },
+      {
+        index: 2,
+        title: '达成协议',
+        aiLine: '成交！那我们就按这个方案来',
+        teaching: '确认关键条款，巩固共识',
+        choices: [
+          { text: '太好了！为了确保我们理解一致，我总结一下：价格降8%，合同期限3年，优先采购权。对吗？', quality: 'high', affinity: 5, feedback: '确认要点避免后续误解，很专业' },
+          { text: '好的，那就这样', quality: 'normal', affinity: 0, feedback: '可以更细致地确认条款' },
+          { text: '终于谈完了，真累', quality: 'low', affinity: -5, feedback: '消极态度会影响后续合作氛围' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 10,
+    title: '客户投诉处理',
+    stage: 2,
+    stageName: '认识→普通朋友（接触期）',
+    difficulty: 4,
+    durationMinutes: 12,
+    skill: '客户服务、问题解决、情绪安抚',
+    background: '一位客户因为产品质量问题非常生气地来找你投诉，要求退款和赔偿。',
+    atmosphere: '客服中心，客户满脸怒气地站在你面前，声音很大，周围有人在观望。',
+    rounds: [
+      {
+        index: 0,
+        title: '安抚情绪',
+        aiLine: '（愤怒）你们的产品质量太差了！我要投诉！',
+        teaching: '先处理情绪再处理问题',
+        choices: [
+          { text: '先生/女士，请先消消气，我非常理解您的心情。请坐下来慢慢说，我一定会帮您解决问题', quality: 'high', affinity: 5, feedback: '先共情安抚，给对方尊重感' },
+          { text: '请您冷静一下，我们会处理的', quality: 'normal', affinity: 0, feedback: '语气有点生硬，可以更共情' },
+          { text: '有话好好说，吵也没用', quality: 'low', affinity: -8, feedback: '指责对方会火上浇油' }
+        ]
+      },
+      {
+        index: 1,
+        title: '了解情况',
+        aiLine: '（稍微平静）上周买的产品，用了两天就坏了，客服还不理我',
+        teaching: '耐心倾听，记录关键信息',
+        choices: [
+          { text: '非常抱歉给您带来了不好的体验。我来记录一下：产品使用两天出现故障，之前联系客服没有得到回复。对吗？', quality: 'high', affinity: 5, feedback: '复述确认信息，让客户感到被重视' },
+          { text: '好的，我知道了', quality: 'normal', affinity: 0, feedback: '可以更积极地回应' },
+          { text: '这种情况很少见的', quality: 'low', affinity: -5, feedback: '推卸责任的说法会让客户更不满' }
+        ]
+      },
+      {
+        index: 2,
+        title: '解决问题',
+        aiLine: '那现在怎么解决？',
+        teaching: '给出具体方案，超出预期更好',
+        choices: [
+          { text: '为了表达我们的歉意，我们可以为您办理全额退款，并额外赠送一张50元的优惠券。同时我会安排技术人员跟进了解故障原因。您看这样可以吗？', quality: 'high', affinity: 8, feedback: '主动给出超出预期的解决方案，体现诚意' },
+          { text: '那我们给您退款吧', quality: 'normal', affinity: 0, feedback: '只是满足基本要求，可以更主动' },
+          { text: '按规定我们只能退款，其他没办法', quality: 'low', affinity: -8, feedback: '冰冷的规定会让客户流失' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 11,
+    title: '跨部门沟通协调',
+    stage: 2,
+    stageName: '认识→普通朋友（接触期）',
+    difficulty: 3,
+    durationMinutes: 12,
+    skill: '需求澄清、资源协调、目标对齐',
+    background: '你需要其他部门配合完成一个紧急项目，但对方部门负责人态度冷淡，不太愿意配合。',
+    atmosphere: '对方部门的办公室，负责人坐在办公桌后，表情有些不耐烦。',
+    rounds: [
+      {
+        index: 0,
+        title: '提出需求',
+        aiLine: '（看了看手表）什么事？我这边也很忙的',
+        teaching: '先说明目的和对方的利益点',
+        choices: [
+          { text: '我知道你这边很忙，不好意思打扰。这次来找你是因为有个紧急项目需要你们部门的支持，完成后能帮你们部门节省20%的重复工作', quality: 'high', affinity: 5, feedback: '先理解对方，再说明对对方的好处' },
+          { text: '我们有个项目需要你们帮忙', quality: 'normal', affinity: 0, feedback: '太直接了，可以考虑对方的立场' },
+          { text: '领导让我来找你要资源', quality: 'low', affinity: -5, feedback: '用领导压人会引起反感' }
+        ]
+      },
+      {
+        index: 1,
+        title: '处理推脱',
+        aiLine: '我们部门最近也有几个大项目，实在抽不出人手',
+        teaching: '提供解决方案，减轻对方负担',
+        choices: [
+          { text: '我理解你们的压力。我们可以调整方案，把需要你们做的部分简化，并且我们团队可以派两个人过去帮忙打下手，您看可以吗？', quality: 'high', affinity: 5, feedback: '主动分担，降低对方成本' },
+          { text: '可是这个项目真的很紧急', quality: 'normal', affinity: 0, feedback: '只说自己的需求，没考虑对方' },
+          { text: '这个项目领导很重视，必须按时完成', quality: 'low', affinity: -5, feedback: '施压式沟通效果不好' }
+        ]
+      },
+      {
+        index: 2,
+        title: '达成共识',
+        aiLine: '好吧，那我们可以派一个人过去帮忙',
+        teaching: '表达感谢，建立长期合作关系',
+        choices: [
+          { text: '太感谢了！等项目结束我请大家喝奶茶，以后你们有需要帮忙的地方，我们一定全力支持', quality: 'high', affinity: 5, feedback: '人情投资，为未来合作铺垫' },
+          { text: '好的，谢谢', quality: 'normal', affinity: 0, feedback: '可以更热情一点' },
+          { text: '太好了，那让他尽快过来吧', quality: 'low', affinity: -3, feedback: '显得太功利，缺少人情味' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 12,
+    title: '拒绝不合理请求',
+    stage: 2,
+    stageName: '认识→普通朋友（接触期）',
+    difficulty: 3,
+    durationMinutes: 10,
+    skill: '坚定边界、委婉拒绝、保持关系',
+    background: '同事来找你帮忙做一件不属于你职责范围的事，而且会占用你很多私人时间。',
+    atmosphere: '办公室茶水间，同事笑着走过来找你。',
+    rounds: [
+      {
+        index: 0,
+        title: '面对请求',
+        aiLine: '嘿，帮个忙呗！我周末有事，这个报告你帮我写一下？',
+        teaching: '先理解再拒绝，避免直接否定',
+        choices: [
+          { text: '谢谢你信任我！不过我周末已经有安排了，实在抽不出时间。我可以帮你梳理一下思路，或者推荐一个好用的模板给你', quality: 'high', affinity: 5, feedback: '先感谢再拒绝，提供替代方案' },
+          { text: '我没时间', quality: 'normal', affinity: 0, feedback: '太直接，可以更委婉' },
+          { text: '凭什么让我帮你写', quality: 'low', affinity: -10, feedback: '攻击性回应会破坏关系' }
+        ]
+      },
+      {
+        index: 1,
+        title: '对方坚持',
+        aiLine: '就帮我这一次嘛，下次我请你吃饭',
+        teaching: '温柔而坚定，不轻易妥协',
+        choices: [
+          { text: '真的很抱歉！我周末要陪家人，实在没办法。你可以试试先写个大纲，我周一帮你看看有没有问题', quality: 'high', affinity: 5, feedback: '坚持边界但提供有限帮助' },
+          { text: '我真的没时间', quality: 'normal', affinity: 0, feedback: '重复拒绝但缺少解释' },
+          { text: '你自己的工作自己做', quality: 'low', affinity: -8, feedback: '指责式回应会伤害同事关系' }
+        ]
+      },
+      {
+        index: 2,
+        title: '收尾',
+        aiLine: '好吧，那我自己想想办法',
+        teaching: '表达理解，维护关系',
+        choices: [
+          { text: '不好意思没能帮上忙。如果有什么问题随时可以问我，我一定尽力解答', quality: 'high', affinity: 5, feedback: '保持开放态度，维护良好关系' },
+          { text: '嗯', quality: 'normal', affinity: 0, feedback: '可以更友好一点' },
+          { text: '早知道你自己能做', quality: 'low', affinity: -5, feedback: '讽刺会破坏团队氛围' }
+        ]
+      }
+    ]
   }
 ];
 

@@ -7,6 +7,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const { initDatabase } = require('./config/database');
 const { initRedis } = require('./config/redis');
 const authMiddleware = require('./middleware/auth');
@@ -24,6 +25,23 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// 速率限制中间件
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '请求过于频繁，请稍后再试', code: 'RATE_LIMITED' },
+});
+
+const strictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '操作过于频繁，请稍后再试', code: 'STRICT_RATE_LIMITED' },
+});
+
 // 请求日志中间件（每请求记录）
 app.use(requestLogger);
 
@@ -32,18 +50,18 @@ app.get('/health', (req, res) => {
   res.json(success({ status: 'ok', time: new Date().toISOString() }));
 });
 
-// 路由（公开 - 无需认证）
-app.use('/api/v1/user', require('./routes/user'));
+// 路由（公开 - 无需认证）- 严格限制登录/注册接口
+app.use('/api/v1/user', strictLimiter, require('./routes/user'));
 
-// 路由（需认证）
-app.use('/api/v1/partner', authMiddleware, require('./routes/partner'));
-app.use('/api/v1/chat', authMiddleware, require('./routes/chat'));
-app.use('/api/v1/scenarios', authMiddleware, require('./routes/scenario'));
-app.use('/api/v1/training', authMiddleware, require('./routes/training'));
-app.use('/api/v1/growth', authMiddleware, require('./routes/growth'));
-app.use('/api/v1/talent', authMiddleware, require('./routes/talent'));
-app.use('/api/v1/membership', authMiddleware, require('./routes/membership'));
-app.use('/api/v1/compliance', authMiddleware, require('./routes/compliance'));
+// 路由（需认证）- 常规限制
+app.use('/api/v1/partner', authMiddleware, apiLimiter, require('./routes/partner'));
+app.use('/api/v1/chat', authMiddleware, apiLimiter, require('./routes/chat'));
+app.use('/api/v1/scenarios', authMiddleware, apiLimiter, require('./routes/scenario'));
+app.use('/api/v1/training', authMiddleware, apiLimiter, require('./routes/training'));
+app.use('/api/v1/growth', authMiddleware, apiLimiter, require('./routes/growth'));
+app.use('/api/v1/talent', authMiddleware, apiLimiter, require('./routes/talent'));
+app.use('/api/v1/membership', authMiddleware, strictLimiter, require('./routes/membership'));
+app.use('/api/v1/compliance', authMiddleware, apiLimiter, require('./routes/compliance'));
 
 // 404处理
 app.use(notFoundHandler);

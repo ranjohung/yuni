@@ -211,39 +211,103 @@ router.post('/timeshift', async (req, res, next) => {
   }
 });
 
+// 场景评分配置
+const scenarioConfigs = {
+  1: { // 咖啡厅破冰
+    name: '咖啡厅破冰',
+    weights: { communication: 0.3, expression: 0.2, empathy: 0.2, emotionControl: 0.15, adaptability: 0.15 }
+  },
+  2: { // 兴趣社群自我介绍
+    name: '兴趣社群自我介绍',
+    weights: { communication: 0.2, expression: 0.4, empathy: 0.15, emotionControl: 0.15, adaptability: 0.1 }
+  },
+  3: { // 模拟面试
+    name: '模拟面试',
+    weights: { communication: 0.25, expression: 0.35, empathy: 0.1, emotionControl: 0.2, adaptability: 0.1 }
+  },
+  4: { // 向上汇报被质疑
+    name: '向上汇报被质疑',
+    weights: { communication: 0.2, expression: 0.25, empathy: 0.15, emotionControl: 0.3, adaptability: 0.1 }
+  },
+  5: { // 被朋友误解
+    name: '被朋友误解',
+    weights: { communication: 0.25, expression: 0.15, empathy: 0.4, emotionControl: 0.1, adaptability: 0.1 }
+  },
+  6: { // 安慰失落的TA
+    name: '安慰失落的TA',
+    weights: { communication: 0.2, expression: 0.15, empathy: 0.5, emotionControl: 0.1, adaptability: 0.05 }
+  }
+};
+
+// 选项质量配置
+const choiceQuality = [
+  { score: 15, feedback: '', affinityChange: 5 },
+  { score: 12, feedback: '不错的回应！', affinityChange: 3 },
+  { score: 8, feedback: '可以试试更积极的回应方式', affinityChange: -2 },
+  { score: 4, feedback: '这个回应可能让对方感到不舒服', affinityChange: -5 },
+  { score: 0, feedback: '这个回应不太合适，试试换一种方式', affinityChange: -10 }
+];
+
 // 计算单轮得分
 async function calculateRoundScore(scenarioId, roundIndex, choiceIndex) {
-  const affinityChangeMap = [0, -2, -5, -8, -10];
-  const feedbackMap = [
-    '', '', '试试更积极的回应方式', '这个回应可能让对方感到不舒服', '这个回应不太合适'
-  ];
+  const config = choiceQuality[choiceIndex] || choiceQuality[choiceQuality.length - 1];
   
   return {
-    roundScore: Math.max(0, 15 - choiceIndex * 8),
+    roundScore: config.score,
     totalScore: 50,
-    feedback: feedbackMap[choiceIndex] || '',
-    affinityChange: affinityChangeMap[choiceIndex] || 0
+    feedback: config.feedback,
+    affinityChange: config.affinityChange
   };
 }
 
 // 计算最终得分
 function calculateFinalScore(scenarioId, choices) {
-  const goodChoices = choices.filter(c => c.choice <= 1).length;
-  const badChoices = choices.filter(c => c.choice >= 2).length;
-  const totalRounds = choices.length || 1;
+  const config = scenarioConfigs[scenarioId] || {
+    weights: { communication: 0.2, expression: 0.2, empathy: 0.2, emotionControl: 0.2, adaptability: 0.2 }
+  };
   
-  const baseScore = 60;
-  const goodBonus = goodChoices * 10;
-  const badPenalty = badChoices * 8;
-  const totalScore = Math.max(0, Math.min(100, baseScore + goodBonus - badPenalty));
+  // 计算基础得分（基于选项质量）
+  let totalScore = 0;
+  let communicationScore = 0;
+  let expressionScore = 0;
+  let empathyScore = 0;
+  let emotionControlScore = 0;
+  let adaptabilityScore = 0;
+  
+  for (const choice of choices) {
+    const quality = choiceQuality[choice.choice] || choiceQuality[choiceQuality.length - 1];
+    const roundScore = quality.score;
+    totalScore += roundScore;
+    
+    // 根据场景权重分配分数
+    communicationScore += roundScore * config.weights.communication;
+    expressionScore += roundScore * config.weights.expression;
+    empathyScore += roundScore * config.weights.empathy;
+    emotionControlScore += roundScore * config.weights.emotionControl;
+    adaptabilityScore += roundScore * config.weights.adaptability;
+  }
+  
+  const maxPossibleScore = choices.length * 15;
+  const percentage = maxPossibleScore > 0 ? (totalScore / maxPossibleScore) : 0;
+  totalScore = Math.round(percentage * 100);
+  
+  // 应用权重后的维度得分
+  communicationScore = Math.round((communicationScore / (choices.length * 15 * config.weights.communication || 1)) * 100);
+  expressionScore = Math.round((expressionScore / (choices.length * 15 * config.weights.expression || 1)) * 100);
+  empathyScore = Math.round((empathyScore / (choices.length * 15 * config.weights.empathy || 1)) * 100);
+  emotionControlScore = Math.round((emotionControlScore / (choices.length * 15 * config.weights.emotionControl || 1)) * 100);
+  adaptabilityScore = Math.round((adaptabilityScore / (choices.length * 15 * config.weights.adaptability || 1)) * 100);
+  
+  // 添加少量随机波动（±5分）增加真实感
+  const addVariance = (score) => Math.min(100, Math.max(0, score + (Math.floor(Math.random() * 11) - 5)));
   
   return {
-    totalScore,
-    communication: Math.min(100, totalScore + Math.floor(Math.random() * 10)),
-    expression: Math.min(100, totalScore - 5 + Math.floor(Math.random() * 10)),
-    empathy: Math.min(100, totalScore + Math.floor(Math.random() * 15) - 5),
-    emotionControl: Math.min(100, totalScore - 3 + Math.floor(Math.random() * 10)),
-    adaptability: Math.min(100, totalScore + Math.floor(Math.random() * 8)),
+    totalScore: Math.min(100, Math.max(0, totalScore)),
+    communication: addVariance(communicationScore),
+    expression: addVariance(expressionScore),
+    empathy: addVariance(empathyScore),
+    emotionControl: addVariance(emotionControlScore),
+    adaptability: addVariance(adaptabilityScore),
     level: getScoreLevel(totalScore)
   };
 }

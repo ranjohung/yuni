@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://10.0.2.2:3000/api/v1'; // Android模拟器
+  static const String androidBaseUrl = 'http://10.0.2.2:3000/api/v1'; // Android模拟器
   static const String iosBaseUrl = 'http://localhost:3000/api/v1';
-  static const String webBaseUrl = 'http://localhost:3000/api/v1'; // Web浏览器
+  static const String webBaseUrl = 'http://localhost:3000/api/v1';
+  static const String productionBaseUrl = 'https://api.yuni.app/api/v1';
 
   String? _token;
   static final ApiClient _instance = ApiClient._internal();
@@ -14,8 +16,16 @@ class ApiClient {
   ApiClient._internal();
 
   String get base {
-    // Web版用localhost
-    return 'http://localhost:3000/api/v1';
+    if (kReleaseMode) {
+      return productionBaseUrl;
+    }
+    if (kIsWeb) {
+      return webBaseUrl;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return androidBaseUrl;
+    }
+    return iosBaseUrl;
   }
 
   bool get hasToken => _token != null && _token!.isNotEmpty;

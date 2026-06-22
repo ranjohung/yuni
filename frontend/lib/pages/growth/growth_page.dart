@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../services/index.dart';
 
 class GrowthPage extends StatefulWidget {
@@ -56,36 +57,21 @@ class _GrowthPageState extends State<GrowthPage> {
                         const Text('能力雷达图', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 16),
                         SizedBox(
-                          height: 200,
-                          child: Center(
-                            child: _radarData != null
-                              ? Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('综合得分', style: TextStyle(color: Colors.grey[500])),
-                                    Text('${_radarData!['overall'] ?? 0}',
-                                      style: TextStyle(
-                                        fontSize: 48,
-                                        fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.primary,
-                                      )),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 12,
-                                      runSpacing: 4,
-                                      children: [
-                                        _buildScoreChip('沟通', _radarData!['communication'] ?? 0, Colors.blue),
-                                        _buildScoreChip('表达', _radarData!['expression'] ?? 0, Colors.green),
-                                        _buildScoreChip('共情', _radarData!['empathy'] ?? 0, Colors.orange),
-                                        _buildScoreChip('情绪', _radarData!['emotionControl'] ?? 0, Colors.purple),
-                                        _buildScoreChip('应变', _radarData!['adaptability'] ?? 0, Colors.teal),
-                                      ],
-                                    ),
-                                  ],
-                                )
-                              : const Text('暂无数据'),
-                          ),
+                          height: 240,
+                          child: _radarData != null
+                            ? _buildRadarChart()
+                            : const Center(child: Text('暂无数据')),
                         ),
+                        const SizedBox(height: 12),
+                        if (_radarData != null) ...[
+                          Text('综合得分', style: TextStyle(color: Colors.grey[500])),
+                          Text('${_radarData!['overall'] ?? 0}',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            )),
+                        ],
                       ],
                     ),
                   ),
@@ -148,6 +134,47 @@ class _GrowthPageState extends State<GrowthPage> {
               ],
             ),
           ),
+    );
+  }
+
+  Widget _buildRadarChart() {
+    final theme = Theme.of(context);
+    final labels = ['沟通', '表达', '共情', '情绪', '应变'];
+    final values = [
+      (_radarData!['communication'] ?? 0) / 100,
+      (_radarData!['expression'] ?? 0) / 100,
+      (_radarData!['empathy'] ?? 0) / 100,
+      (_radarData!['emotionControl'] ?? 0) / 100,
+      (_radarData!['adaptability'] ?? 0) / 100,
+    ];
+
+    return RadarChart(
+      RadarChartData(
+        radarShape: RadarShape.polygon,
+        radarBorderData: RadarBorderData(show: false),
+        titleTextStyle: const TextStyle(fontSize: 12),
+        dataSets: [
+          RadarDataSet(
+            entries: List.generate(5, (i) => RadarEntry(value: values[i])),
+            borderColor: theme.colorScheme.primary,
+            borderWidth: 2,
+            fillColor: theme.colorScheme.primary.withOpacity(0.2),
+            entryRadius: 4,
+          ),
+        ],
+        labels: RadarChartLabels(
+          labels: labels,
+          angleToLabelAlignment: RadarAngleToLabelAlignment.start,
+          labelTextStyle: TextStyle(color: Colors.grey[600], fontSize: 12),
+        ),
+        ticks: const RadarTicks(
+          show: true,
+          tickCount: 5,
+          tickLength: 4,
+          tickColor: Colors.grey[200],
+        ),
+        gridBorderData: const GridBorderData(show: true, color: Colors.grey[200]),
+      ),
     );
   }
 
