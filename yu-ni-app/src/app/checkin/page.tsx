@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import { Calendar, Check, Gift, Star } from 'lucide-react'
+import { Calendar, Check, Gift, Star, Clock, Ticket } from 'lucide-react'
 
 export default function CheckInPage() {
   const { data: session, status } = useSession()
@@ -81,16 +81,21 @@ export default function CheckInPage() {
             {checkedIn ? '明天再来签到吧！' : '签到获得好感度和积分奖励'}
           </p>
 
-          <div className="flex justify-center gap-6 mb-8">
-            <div className="bg-primary-50 rounded-xl p-4">
+          <div className="flex justify-center gap-4 mb-8">
+            <div className="bg-primary-50 rounded-xl p-4 min-w-[90px]">
               <Star className="w-6 h-6 text-primary-500 mx-auto mb-2" />
               <p className="text-sm text-gray-600">连续签到</p>
               <p className="text-xl font-bold text-primary-500">{streak} 天</p>
             </div>
-            <div className="bg-secondary-50 rounded-xl p-4">
+            <div className="bg-secondary-50 rounded-xl p-4 min-w-[90px]">
               <Gift className="w-6 h-6 text-secondary-500 mx-auto mb-2" />
               <p className="text-sm text-gray-600">今日奖励</p>
               <p className="text-xl font-bold text-secondary-500">+10 好感度</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 min-w-[90px]">
+              <Ticket className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">时空穿梭券</p>
+              <p className="text-xl font-bold text-purple-500">+1 张</p>
             </div>
           </div>
 
@@ -105,7 +110,7 @@ export default function CheckInPage() {
 
           {checkedIn && (
             <div className="p-4 bg-green-50 rounded-xl">
-              <p className="text-green-600 font-medium">🎉 签到成功！获得 10 好感度</p>
+              <p className="text-green-600 font-medium">🎉 签到成功！获得 10 好感度 + 1 时空穿梭券</p>
             </div>
           )}
         </div>
@@ -115,7 +120,7 @@ export default function CheckInPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
               <span className="text-gray-600">每日签到</span>
-              <span className="font-medium text-primary-500">+10 好感度</span>
+              <span className="font-medium text-primary-500">+10 好感度 + 1 时空穿梭券</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
               <span className="text-gray-600">连续签到 3 天</span>
@@ -123,7 +128,11 @@ export default function CheckInPage() {
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
               <span className="text-gray-600">连续签到 7 天</span>
-              <span className="font-medium text-primary-500">+100 积分 + 神秘礼物</span>
+              <span className="font-medium text-primary-500">+100 积分 + 3 时空穿梭券</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl">
+              <span className="text-gray-600">连续签到 30 天</span>
+              <span className="font-medium text-purple-500">+500 积分 + 10 时空穿梭券 + 专属称号</span>
             </div>
           </div>
         </div>

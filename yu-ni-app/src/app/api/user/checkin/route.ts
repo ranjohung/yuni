@@ -40,6 +40,19 @@ export async function POST() {
 
   const newStreak = yesterdayCheckIn ? (user?.currentStreak || 0) + 1 : 1
 
+  let additionalPoints = 0
+  let additionalTickets = 1
+
+  if (newStreak >= 30) {
+    additionalPoints += 500
+    additionalTickets += 10
+  } else if (newStreak >= 7) {
+    additionalPoints += 100
+    additionalTickets += 3
+  } else if (newStreak >= 3) {
+    additionalPoints += 50
+  }
+
   await prisma.$transaction([
     prisma.checkIn.create({
       data: {
@@ -53,7 +66,8 @@ export async function POST() {
       data: {
         currentStreak: newStreak,
         maxStreak: Math.max(newStreak, user?.maxStreak || 0),
-        points: (user?.points || 0) + 10,
+        points: (user?.points || 0) + 10 + additionalPoints,
+        tickets: (user?.tickets || 0) + additionalTickets,
       },
     }),
     prisma.affection.update({

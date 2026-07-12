@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
@@ -59,6 +59,10 @@ export default function MembershipPage() {
   const [currentPlan, setCurrentPlan] = useState<CurrentPlan | null>(null)
   const [loading, setLoading] = useState(true)
   const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wechat')
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<Plan | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -87,19 +91,35 @@ export default function MembershipPage() {
     }
   }
 
-  const handlePurchase = async (planId: string) => {
+  const handlePurchase = (planId: string) => {
     if (planId === 'free') return
-    setPurchasing(planId)
+    const plan = plans.find(p => p.id === planId)
+    if (plan) {
+      setSelectedPlanForPayment(plan)
+      setShowPaymentModal(true)
+    }
+  }
+
+  const confirmPurchase = async () => {
+    if (!selectedPlanForPayment) return
+    setPurchasing(selectedPlanForPayment.id)
+    setShowPaymentModal(false)
 
     try {
       const response = await fetch('/api/membership', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ 
+          planId: selectedPlanForPayment.id,
+          paymentMethod: selectedPaymentMethod
+        }),
       })
       const data = await response.json()
       if (response.ok) {
-        window.location.reload()
+        setShowSuccessModal(true)
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
       } else {
         alert(data.error || '购买失败')
       }
@@ -135,12 +155,13 @@ export default function MembershipPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-amber-50">
-      <Navbar currentPage="membership" />
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-amber-50">
+        <Navbar currentPage="membership" />
 
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
-        {/* 顶部标题 */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+          {/* 顶部标题 */}
+          <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => router.back()}
             className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all"
@@ -409,6 +430,90 @@ export default function MembershipPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* 支付方式选择弹窗 */}
+    {showPaymentModal && selectedPlanForPayment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-800">选择支付方式</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+
+            <div className="bg-gray-50 rounded-2xl p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                    {getPlanIcon(selectedPlanForPayment.id) && (
+                      React.createElement(getPlanIcon(selectedPlanForPayment.id), { className: 'w-6 h-6 text-yellow-600' })
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">{selectedPlanForPayment.name}</p>
+                    <p className="text-sm text-gray-500">会员权益</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-gray-800">¥{selectedPlanForPayment.price}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              {[
+                { id: 'wechat', name: '微信支付', icon: '💬', color: 'bg-green-500' },
+                { id: 'alipay', name: '支付宝', icon: '📱', color: 'bg-blue-500' },
+                { id: 'apple', name: 'Apple Pay', icon: '🍎', color: 'bg-gray-800' },
+              ].map((method) => (
+                <button
+                  key={method.id}
+                  onClick={() => setSelectedPaymentMethod(method.id)}
+                  className={`w-full p-4 rounded-xl flex items-center gap-4 transition-all ${
+                    selectedPaymentMethod === method.id
+                      ? 'border-2 border-yellow-500 bg-yellow-50'
+                      : 'border-2 border-gray-100 hover:border-gray-200'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full ${method.color} flex items-center justify-center text-white text-xl`}>
+                    {method.icon}
+                  </div>
+                  <span className="font-medium text-gray-800">{method.name}</span>
+                  <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    selectedPaymentMethod === method.id ? 'border-yellow-500 bg-yellow-500' : 'border-gray-300'
+                  }`}>
+                    {selectedPaymentMethod === method.id && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={confirmPurchase}
+              className="w-full py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-semibold rounded-xl hover:from-yellow-600 hover:to-amber-600 transition-all shadow-lg shadow-yellow-200"
+            >
+              确认支付 ¥{selectedPlanForPayment.price}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 购买成功弹窗 */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-200">
+              <Check className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">购买成功！</h3>
+            <p className="text-gray-500">恭喜您成为会员，享受专属特权</p>
+            <div className="mt-6 flex items-center justify-center gap-2 text-yellow-500">
+              <Sparkles className="w-5 h-5" />
+              <span className="font-medium">正在刷新页面...</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
