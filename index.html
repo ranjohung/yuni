@@ -1415,7 +1415,7 @@
     createApp({
       setup() {
         const currentTab = ref('home')
-        const loggedIn = ref(localStorage.getItem('yn_loggedIn') === 'true')
+        const loggedIn = ref(false)
         const showRegister = ref(false)
         const phoneNumber = ref('')
         const loginPassword = ref('')
@@ -1443,61 +1443,8 @@
           phoneNumber.value = savedPhone
           rememberMe.value = true
         }
-        const partners = ref([
-          {
-            id: 1,
-            name: '沈清欢',
-            avatar: '🌸',
-            title: '青梅竹马',
-            occupation: '建筑设计师',
-            coreType: 'empathetic',
-            personality: '温柔体贴',
-            isActive: true,
-            moments: '今天路过一家花店，闻到栀子花的香味...',
-            preferences: [
-              { preferenceType: 'hobby', preferenceDetail: '喜欢花艺', revealed: true },
-              { preferenceType: 'food', preferenceDetail: '喜欢甜点', revealed: true },
-              { preferenceType: 'music', preferenceDetail: '喜欢轻音乐', revealed: false },
-              { preferenceType: 'movie', preferenceDetail: '喜欢文艺片', revealed: false },
-            ],
-            createdAt: '2026-01-15'
-          },
-          {
-            id: 2,
-            name: '陈星远',
-            avatar: '⭐',
-            title: '好友',
-            occupation: '程序员',
-            coreType: 'supportive',
-            personality: '稳重可靠',
-            isActive: false,
-            moments: '今天写了一段优雅的代码~',
-            preferences: [
-              { preferenceType: 'hobby', preferenceDetail: '喜欢编程', revealed: true },
-              { preferenceType: 'game', preferenceDetail: '喜欢策略游戏', revealed: true },
-              { preferenceType: 'book', preferenceDetail: '喜欢科幻小说', revealed: false },
-            ],
-            createdAt: '2026-02-20'
-          },
-          {
-            id: 3,
-            name: '林晓语',
-            avatar: '🎨',
-            title: '新朋友',
-            occupation: '插画师',
-            coreType: 'playful',
-            personality: '活泼开朗',
-            isActive: false,
-            moments: '今天画了一幅漂亮的画！',
-            preferences: [
-              { preferenceType: 'hobby', preferenceDetail: '喜欢画画', revealed: true },
-              { preferenceType: 'travel', preferenceDetail: '喜欢旅行', revealed: false },
-              { preferenceType: 'art', preferenceDetail: '喜欢艺术展览', revealed: false },
-            ],
-            createdAt: '2026-03-10'
-          }
-        ])
-        const selectedPartner = ref(partners.value.find(p => p.isActive) || partners.value[0] || null)
+        const partners = ref([])
+        const selectedPartner = ref(null)
         const showCreatePartner = ref(false)
         const showPartnerSettings = ref(false)
         
@@ -1513,11 +1460,9 @@
         }
 
         const user = ref({
-          nickname: localStorage.getItem('yn_phone')
-            ? (JSON.parse(localStorage.getItem('yn_user_' + localStorage.getItem('yn_phone')) || '{}').nickname || '用户')
-            : '小雨',
+          nickname: '用户',
           points: 1280,
-          phone: localStorage.getItem('yn_phone') || ''
+          phone: ''
         })
         const affection = ref(parseInt(localStorage.getItem('affection') || '65'))
         const checkedInToday = ref(localStorage.getItem('lastCheckin') === new Date().toDateString())
@@ -1673,7 +1618,12 @@
           })
         }
 
-        onMounted(() => { nextTick(() => { if (currentTab.value === 'home') initChart() }) })
+        onMounted(() => {
+          localStorage.removeItem('yn_loggedIn')
+          localStorage.removeItem('yn_phone')
+          loggedIn.value = false
+          nextTick(() => { if (currentTab.value === 'home') initChart() })
+        })
         watch(currentTab, (newTab) => { if (newTab === 'home') nextTick(initChart) })
 
         const showChat = ref(false)
@@ -1982,6 +1932,7 @@
           user.value.phone = phoneNumber.value.trim()
           loggedIn.value = true
           currentTab.value = 'partner'
+          nextTick(() => { if (partners.value.length === 0) showCreatePartner.value = true })
         }
 
         const handleSendSms = () => {
@@ -2063,6 +2014,7 @@
           user.value.phone = newUser.phone
           loggedIn.value = true
           currentTab.value = 'partner'
+          nextTick(() => { if (partners.value.length === 0) showCreatePartner.value = true })
         }
 
         const doLogout = () => {
