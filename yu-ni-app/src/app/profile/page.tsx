@@ -338,7 +338,7 @@ export default function ProfilePage() {
             </button>
 
             <button
-              onClick={() => {}}
+              onClick={() => router.push('/invite')}
               className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-all"
             >
               <div className="w-10 h-10 bg-green-100 text-green-500 rounded-full flex items-center justify-center">
