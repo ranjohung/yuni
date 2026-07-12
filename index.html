@@ -1407,6 +1407,56 @@
         <span class="text-xs">我的</span>
       </button>
     </nav>
+
+    <!-- 创建伴侣弹窗 -->
+    <div v-if="showCreatePartner" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showCreatePartner = false">
+      <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transform transition-all">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold text-gray-800">创建新伴侣</h2>
+          <button @click="showCreatePartner = false" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">选择头像</label>
+            <div class="flex flex-wrap gap-2">
+              <button v-for="avatar in ['🌸', '⭐', '🎨', '💝', '🎵', '📚', '🧸', '🌙']" :key="avatar"
+                @click="newPartnerAvatar = avatar"
+                class="w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all"
+                :class="newPartnerAvatar === avatar ? 'ring-2 ring-indigo-500 ring-offset-2 scale-110 bg-indigo-50' : 'hover:scale-105 hover:bg-gray-100'">
+                {{ avatar }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">伴侣名称</label>
+            <input v-model="newPartnerName" type="text" placeholder="给你的伴侣起个名字" maxlength="12"
+              class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-gray-800 placeholder:text-gray-400
+                focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">核心类型</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button v-for="type in partnerTypes" :key="type.value"
+                @click="newPartnerType = type.value"
+                class="p-3 rounded-xl text-left transition-all"
+                :class="newPartnerType === type.value ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'">
+                <div class="font-medium text-sm">{{ type.label }}</div>
+                <div class="text-xs opacity-80 mt-0.5">{{ type.desc }}</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button @click="createPartner"
+          class="w-full mt-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl
+            hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-indigo-200 active:scale-[0.98]">
+          创建伴侣
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1447,6 +1497,15 @@
         const selectedPartner = ref(null)
         const showCreatePartner = ref(false)
         const showPartnerSettings = ref(false)
+        const newPartnerAvatar = ref('💝')
+        const newPartnerName = ref('')
+        const newPartnerType = ref('empathetic')
+        const partnerTypes = [
+          { value: 'empathetic', label: '共情型', desc: '温柔体贴' },
+          { value: 'supportive', label: '支持型', desc: '稳重可靠' },
+          { value: 'playful', label: '活泼型', desc: '活泼开朗' },
+          { value: 'wisdom', label: '智慧型', desc: '睿智博学' },
+        ]
         
         const CORE_TYPE_LABELS = {
           empathetic: '共情型',
@@ -1586,6 +1645,37 @@
               selectedPartner.value = partners.value[0] || null
             }
           }
+        }
+
+        const createPartner = () => {
+          if (!newPartnerName.value.trim()) {
+            alert('请输入伴侣名称')
+            return
+          }
+          const newId = partners.value.length > 0 ? Math.max(...partners.value.map(p => p.id)) + 1 : 1
+          const newPartner = {
+            id: newId,
+            name: newPartnerName.value.trim(),
+            avatar: newPartnerAvatar.value,
+            title: partners.value.length === 0 ? '青梅竹马' : '新朋友',
+            occupation: 'AI伴侣',
+            coreType: newPartnerType.value,
+            personality: partnerTypes.find(t => t.value === newPartnerType.value)?.label || '温柔体贴',
+            isActive: partners.value.length === 0,
+            moments: '很高兴认识你！',
+            preferences: [
+              { preferenceType: 'hobby', preferenceDetail: '喜欢聊天', revealed: true },
+              { preferenceType: 'food', preferenceDetail: '喜欢甜品', revealed: true },
+              { preferenceType: 'music', preferenceDetail: '喜欢轻音乐', revealed: false },
+            ],
+            createdAt: new Date().toISOString().split('T')[0]
+          }
+          partners.value.push(newPartner)
+          selectedPartner.value = newPartner
+          showCreatePartner.value = false
+          newPartnerName.value = ''
+          newPartnerAvatar.value = '💝'
+          newPartnerType.value = 'empathetic'
         }
 
         const partner = computed(() => selectedPartner.value)
@@ -2053,9 +2143,10 @@
           giftCoins, gifts, giftHistory, chatSession,
           growthMilestones, learningCourses,
           showCreatePartner, showPartnerSettings,
+          newPartnerAvatar, newPartnerName, newPartnerType, partnerTypes,
           doCheckin, openChat, sendChat, startTraining, selectOption, finishTraining,
           doLogin, doRegister, doLogout, handleSendSms, handleRegSendSms, fillDemoAccount,
-          getCoreTypeLabel, getRevealedPreferences, getUnrevealedCount, switchPartner, deletePartner
+          getCoreTypeLabel, getRevealedPreferences, getUnrevealedCount, switchPartner, deletePartner, createPartner
         }
       }
     }).mount('#app')
