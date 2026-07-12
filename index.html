@@ -672,7 +672,7 @@
     <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'partner'">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-xl font-bold text-gray-800">我的伴侣</h1>
-        <button @click="showCreatePartner = true" class="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all">
+        <button @click="currentTab = 'createPartner'" class="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all">
           <span>+</span> 添加
         </button>
       </div>
@@ -750,7 +750,7 @@
           <span class="text-4xl">❤️</span>
         </div>
         <p class="text-gray-500 mb-4">还没有伴侣</p>
-        <button @click="showCreatePartner = true" class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center gap-2 mx-auto">
+        <button @click="currentTab = 'createPartner'" class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center gap-2 mx-auto">
           <span>+</span> 创建第一个伴侣
         </button>
       </div>
@@ -770,6 +770,79 @@
             <span class="text-2xl mb-2">🎁</span>
             <p class="text-sm font-medium text-gray-700">发现喜好</p>
             <p class="text-xs text-gray-500 mt-1">了解伴侣的喜好能送出更贴心的礼物</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'createPartner'">
+      <div class="flex items-center gap-2 mb-6">
+        <button @click="currentTab = 'partner'" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <span class="text-lg">←</span>
+        </button>
+        <h1 class="text-xl font-bold text-gray-800">创建新伴侣</h1>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+        <div class="text-center">
+          <p class="text-gray-500 text-sm mb-4">选择一个头像</p>
+          <div class="flex flex-wrap justify-center gap-3">
+            <button v-for="avatar in ['🌸', '⭐', '🎨', '💝', '🎵', '📚', '🧸', '🌙', '🦋', '🌈']" :key="avatar"
+              @click="newPartnerAvatar = avatar"
+              class="w-14 h-14 rounded-full flex items-center justify-center text-3xl transition-all"
+              :class="newPartnerAvatar === avatar ? 'ring-2 ring-indigo-500 ring-offset-2 scale-110 bg-indigo-50' : 'hover:scale-105 hover:bg-gray-100'">
+              {{ avatar }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">伴侣名称</label>
+          <input v-model="newPartnerName" type="text" placeholder="给你的伴侣起个名字" maxlength="12"
+            class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-gray-800 placeholder:text-gray-400
+              focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">核心类型</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button v-for="type in partnerTypes" :key="type.value"
+              @click="newPartnerType = type.value"
+              class="p-3 rounded-xl text-left transition-all"
+              :class="newPartnerType === type.value ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'">
+              <div class="font-medium text-sm">{{ type.label }}</div>
+              <div class="text-xs opacity-80 mt-0.5">{{ type.desc }}</div>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-3">性格倾向</label>
+          <div class="space-y-4">
+            <div v-for="item in partnerPersonality" :key="item.key">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-gray-600">{{ item.label }}</span>
+                <span class="text-indigo-500 font-medium">{{ item.value }}</span>
+              </div>
+              <input type="range" :min="item.min" :max="item.max" :step="item.step" v-model="item.value"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            </div>
+          </div>
+        </div>
+
+        <button @click="createPartner"
+          class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl
+            hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-indigo-200 active:scale-[0.98]">
+          创建伴侣
+        </button>
+      </div>
+
+      <div class="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4">
+        <div class="flex items-start gap-3">
+          <span class="text-xl">❤️</span>
+          <div>
+            <p class="text-sm font-medium text-gray-700">关于伴侣</p>
+            <p class="text-xs text-gray-500 mt-1">每个伴侣都有独特的性格和喜好，随着你们的互动，你会逐渐了解他们的内心世界。</p>
           </div>
         </div>
       </div>
@@ -1635,6 +1708,13 @@
           { value: 'playful', label: '活泼型', desc: '活泼开朗' },
           { value: 'wisdom', label: '智慧型', desc: '睿智博学' },
         ]
+        const partnerPersonality = ref([
+          { key: 'openness', label: '开放性', min: 0, max: 100, step: 5, value: 70 },
+          { key: 'conscientiousness', label: '责任心', min: 0, max: 100, step: 5, value: 60 },
+          { key: 'extraversion', label: '外向性', min: 0, max: 100, step: 5, value: 50 },
+          { key: 'agreeableness', label: '宜人性', min: 0, max: 100, step: 5, value: 80 },
+          { key: 'neuroticism', label: '情绪稳定性', min: 0, max: 100, step: 5, value: 30 },
+        ])
         
         const CORE_TYPE_LABELS = {
           empathetic: '共情型',
@@ -1801,10 +1881,17 @@
           }
           partners.value.push(newPartner)
           selectedPartner.value = newPartner
-          showCreatePartner.value = false
+          currentTab.value = 'partner'
           newPartnerName.value = ''
           newPartnerAvatar.value = '💝'
           newPartnerType.value = 'empathetic'
+          partnerPersonality.value = [
+            { key: 'openness', label: '开放性', min: 0, max: 100, step: 5, value: 70 },
+            { key: 'conscientiousness', label: '责任心', min: 0, max: 100, step: 5, value: 60 },
+            { key: 'extraversion', label: '外向性', min: 0, max: 100, step: 5, value: 50 },
+            { key: 'agreeableness', label: '宜人性', min: 0, max: 100, step: 5, value: 80 },
+            { key: 'neuroticism', label: '情绪稳定性', min: 0, max: 100, step: 5, value: 30 },
+          ]
         }
 
         const partner = computed(() => selectedPartner.value)
@@ -2301,7 +2388,7 @@
           giftCoins, gifts, giftHistory, chatSession,
           growthMilestones, learningCourses,
           showCreatePartner, showPartnerSettings,
-          newPartnerAvatar, newPartnerName, newPartnerType, partnerTypes,
+          newPartnerAvatar, newPartnerName, newPartnerType, partnerTypes, partnerPersonality,
           onboardingStep, selectedOnboardingPartner, onboardingNickname, onboardingPartners,
           doCheckin, openChat, sendChat, startTraining, selectOption, finishTraining,
           doLogin, doRegister, doLogout, handleSendSms, handleRegSendSms, fillDemoAccount,
