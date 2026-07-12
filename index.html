@@ -416,18 +416,7 @@
             <span class="text-lg">⚠️</span>
             <span class="font-bold text-yellow-200">关系冷淡</span>
           </div>
-          <p class="text-white/80 text-sm mb-3">伴侣感觉有些孤单，快多陪陪TA吧！</p>
-          <div class="flex flex-wrap gap-2">
-            <button @click="currentTab = 'chat'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
-              <span>💬</span>主动聊天
-            </button>
-            <button @click="currentTab = 'gifts'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
-              <span>🎁</span>送礼物
-            </button>
-            <button @click="currentTab = 'training'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
-              <span>⚡</span>互动训练
-            </button>
-          </div>
+          <p class="text-white/80 text-sm">伴侣感觉有些孤单，快多陪陪TA吧！</p>
         </div>
 
         <div v-if="affection < 30" class="mt-4 p-4 bg-red-500/30 rounded-xl">
@@ -435,18 +424,7 @@
             <span class="text-lg">🔴</span>
             <span class="font-bold text-red-200">关系危机</span>
           </div>
-          <p class="text-white/80 text-sm mb-3">伴侣对你的好感度已经很低了，如果不及时采取行动，你们的关系可能会破裂。</p>
-          <div class="flex flex-wrap gap-2">
-            <button @click="currentTab = 'chat'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
-              <span>💬</span>主动聊天
-            </button>
-            <button @click="currentTab = 'gifts'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
-              <span>🎁</span>送礼物
-            </button>
-            <button @click="currentTab = 'training'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
-              <span>⚡</span>互动训练
-            </button>
-          </div>
+          <p class="text-white/80 text-sm">伴侣对你的好感度已经很低了，如果不及时采取行动，你们的关系可能会破裂。</p>
         </div>
 
         <div v-if="affection >= 80" class="mt-4 p-4 bg-green-500/20 rounded-xl">
@@ -455,15 +433,6 @@
             <span class="font-bold text-green-200">亲密无间</span>
           </div>
           <p class="text-white/80 text-sm">你们的关系非常好！继续保持互动，解锁更多专属回忆吧~</p>
-        </div>
-
-        <div class="mt-6 flex gap-3">
-          <button @click="currentTab = 'chat'" class="flex-1 bg-white/20 hover:bg-white/30 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all">
-            <span>💝</span>互动
-          </button>
-          <button @click="currentTab = 'gifts'" class="flex-1 bg-white/20 hover:bg-white/30 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all">
-            <span>🎁</span>送礼物
-          </button>
         </div>
       </div>
 
@@ -580,91 +549,72 @@
           <span class="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">{{ goodnightPlan.mood }}</span>
         </div>
         <h4 class="text-xl font-bold mb-3">{{ goodnightPlan.title }}</h4>
-        <p class="text-white/80 mb-6">{{ goodnightPlan.content }}</p>
-        <div class="flex gap-3">
-          <button @click="currentTab = 'chat'" class="flex-1 bg-white/20 hover:bg-white/30 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
-            <span>💬</span>聊聊心事
+        <p class="text-white/80">{{ goodnightPlan.content }}</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <div class="flex items-center gap-2 mb-4">
+          <span>🎯</span>
+          <h3 class="font-bold text-gray-800">快速入口</h3>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <button @click="currentTab = 'checkin'" :class="checkedInToday ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-600'" class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-100 transition-all">
+            <div :class="checkedInToday ? 'bg-green-100 text-green-500' : 'bg-indigo-100 text-indigo-500'" class="w-10 h-10 rounded-full flex items-center justify-center">
+              <span>📅</span>
+            </div>
+            <span class="text-xs font-medium">{{ checkedInToday ? '已签到' : '签到' }}</span>
           </button>
-          <button @click="currentTab = 'growth'" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
-            <span>✨</span>睡前放松
+          <button @click="currentTab = 'chat'" class="flex flex-col items-center gap-2 p-3 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all">
+            <div class="w-10 h-10 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center">
+              <span>💬</span>
+            </div>
+            <span class="text-xs font-medium">聊天</span>
+          </button>
+          <button @click="currentTab = 'training'" class="flex flex-col items-center gap-2 p-3 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all">
+            <div class="w-10 h-10 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center">
+              <span>📈</span>
+            </div>
+            <span class="text-xs font-medium">训练</span>
+          </button>
+          <button @click="currentTab = 'gifts'" class="flex flex-col items-center gap-2 p-3 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all">
+            <div class="w-10 h-10 bg-red-100 text-red-500 rounded-full flex items-center justify-center">
+              <span>🎁</span>
+            </div>
+            <span class="text-xs font-medium">送礼</span>
           </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        <button @click="currentTab = 'checkin'" :class="checkedInToday ? 'bg-green-100 text-green-500' : 'bg-white text-indigo-500'" class="rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
-          <div :class="checkedInToday ? 'bg-green-200 text-green-600' : 'bg-indigo-100 text-indigo-600'" class="w-12 h-12 rounded-full flex items-center justify-center">
-            <span>📅</span>
-          </div>
-          <span class="font-medium">{{ checkedInToday ? '已签到' : '签到' }}</span>
-          <span class="text-xs text-gray-500">连续 {{ checkinStreak }} 天</span>
-        </button>
-        <button @click="currentTab = 'chat'" class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
-          <div class="w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center">
-            <span>💬</span>
-          </div>
-          <span class="font-medium text-gray-800">聊天</span>
-          <span class="text-xs text-gray-500">{{ chatSession?.lastMessage || '暂无消息' }}</span>
-        </button>
-        <button @click="currentTab = 'training'" class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
-          <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
-            <span>📈</span>
-          </div>
-          <span class="font-medium text-gray-800">训练</span>
-          <span class="text-xs text-gray-500">本周 {{ recentTrainings.length }} 次</span>
-        </button>
-        <button @click="currentTab = 'growth'" class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
-          <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-            <span>✨</span>
-          </div>
-          <span class="font-medium text-gray-800">成长</span>
-          <span class="text-xs text-gray-500">查看报告</span>
-        </button>
-      </div>
-
-      <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-5 mt-4">
+      <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-5 mb-4">
         <h3 class="font-bold text-gray-800 mb-3">今日小贴士</h3>
         <p class="text-gray-600 text-sm">倾听是沟通的基础。试着在对话中多听少说，理解对方的感受比表达自己更重要。</p>
         <button @click="currentTab = 'growth'" class="mt-4 flex items-center gap-2 text-indigo-500 text-sm font-medium">
-          <span>💡</span>
-          <span>学习更多沟通技巧</span>
+          <span>💡</span>学习更多沟通技巧
         </button>
       </div>
 
-      <div class="bg-white rounded-2xl p-5 shadow-sm mt-4">
+      <div class="bg-white rounded-2xl p-5 shadow-sm">
         <div class="flex items-center gap-2 mb-4">
           <span>🚀</span>
-          <h3 class="font-bold text-gray-800">更多功能</h3>
+          <h3 class="font-bold text-gray-800">探索更多</h3>
         </div>
         <div class="grid grid-cols-4 gap-3">
-          <a href="http://localhost:3000/llm-status" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
-            <div class="w-12 h-12 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center"><span>🧠</span></div>
-            <span class="text-xs text-gray-600">AI模型状态</span>
-          </a>
-          <a href="http://localhost:3000/voice-call" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
-            <div class="w-12 h-12 bg-green-100 text-green-500 rounded-full flex items-center justify-center"><span>📞</span></div>
-            <span class="text-xs text-gray-600">语音通话</span>
-          </a>
-          <a href="http://localhost:3000/talent" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
-            <div class="w-12 h-12 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center"><span>🎭</span></div>
-            <span class="text-xs text-gray-600">才艺</span>
-          </a>
-          <a href="http://localhost:3000/timetravel" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
-            <div class="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center"><span>⏰</span></div>
-            <span class="text-xs text-gray-600">时光回溯</span>
-          </a>
-          <a href="http://localhost:3000/shop" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
-            <div class="w-12 h-12 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center"><span>🛍️</span></div>
-            <span class="text-xs text-gray-600">商城</span>
-          </a>
-          <a href="http://localhost:3000/character" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
-            <div class="w-12 h-12 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center"><span>🎨</span></div>
-            <span class="text-xs text-gray-600">角色自定义</span>
-          </a>
-          <a href="http://localhost:3000/mentalhealth" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
-            <div class="w-12 h-12 bg-teal-100 text-teal-500 rounded-full flex items-center justify-center"><span>💚</span></div>
+          <button @click="currentTab = 'growth'" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-10 h-10 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center"><span>📊</span></div>
+            <span class="text-xs text-gray-600">成长报告</span>
+          </button>
+          <button @click="currentTab = 'partner'" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-10 h-10 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center"><span>💝</span></div>
+            <span class="text-xs text-gray-600">我的伴侣</span>
+          </button>
+          <button @click="currentTab = 'memories'" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-10 h-10 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center"><span>📖</span></div>
+            <span class="text-xs text-gray-600">回忆录</span>
+          </button>
+          <button @click="currentTab = 'mentalhealth'" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-10 h-10 bg-teal-100 text-teal-500 rounded-full flex items-center justify-center"><span>💚</span></div>
             <span class="text-xs text-gray-600">心理健康</span>
-          </a>
+          </button>
         </div>
       </div>
     </main>
