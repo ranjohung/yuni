@@ -28,6 +28,15 @@ interface ReportScores {
   completedCount: number
   totalTraining: number
   scoreTrend: number[]
+  checkinCount: number
+  giftCount: number
+  diaryCount: number
+  affectionScore: number
+  emotionDistribution: {
+    positive: number
+    neutral: number
+    negative: number
+  }
 }
 
 interface Report {
@@ -165,6 +174,33 @@ export default function ReportPage() {
               </p>
               <p className="text-xs text-gray-400 mt-1">平均得分</p>
             </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Clock className="w-5 h-5 text-amber-500" />
+              </div>
+              <p className="text-2xl font-bold text-gray-800">
+                {selectedReport.scores?.checkinCount ?? 0}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">签到天数</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+              <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Heart className="w-5 h-5 text-pink-500" />
+              </div>
+              <p className="text-2xl font-bold text-gray-800">
+                {selectedReport.scores?.affectionScore ?? 0}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">亲密度</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Activity className="w-5 h-5 text-purple-500" />
+              </div>
+              <p className="text-2xl font-bold text-gray-800">
+                {selectedReport.scores?.diaryCount ?? 0}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">情绪日记</p>
+            </div>
           </div>
 
           {selectedReport.scores?.scoreTrend && selectedReport.scores.scoreTrend.length > 0 && (
@@ -259,23 +295,27 @@ export default function ReportPage() {
               <Activity className="w-5 h-5 text-orange-500" />
               <h3 className="font-bold text-gray-800">情绪分析</h3>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-green-50 rounded-xl p-3 text-center">
-                <div className="text-2xl mb-1">😊</div>
-                <p className="text-sm font-bold text-green-600">积极</p>
-                <p className="text-xs text-gray-500">65%</p>
+            {selectedReport.scores?.emotionDistribution ? (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-green-50 rounded-xl p-3 text-center">
+                  <div className="text-2xl mb-1">😊</div>
+                  <p className="text-sm font-bold text-green-600">积极</p>
+                  <p className="text-xs text-gray-500">{selectedReport.scores.emotionDistribution.positive}篇</p>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <div className="text-2xl mb-1">😐</div>
+                  <p className="text-sm font-bold text-blue-600">中性</p>
+                  <p className="text-xs text-gray-500">{selectedReport.scores.emotionDistribution.neutral}篇</p>
+                </div>
+                <div className="bg-red-50 rounded-xl p-3 text-center">
+                  <div className="text-2xl mb-1">😔</div>
+                  <p className="text-sm font-bold text-red-600">消极</p>
+                  <p className="text-xs text-gray-500">{selectedReport.scores.emotionDistribution.negative}篇</p>
+                </div>
               </div>
-              <div className="bg-blue-50 rounded-xl p-3 text-center">
-                <div className="text-2xl mb-1">😐</div>
-                <p className="text-sm font-bold text-blue-600">中性</p>
-                <p className="text-xs text-gray-500">25%</p>
-              </div>
-              <div className="bg-red-50 rounded-xl p-3 text-center">
-                <div className="text-2xl mb-1">😔</div>
-                <p className="text-sm font-bold text-red-600">消极</p>
-                <p className="text-xs text-gray-500">10%</p>
-              </div>
-            </div>
+            ) : (
+              <p className="text-gray-500 text-sm text-center">暂无情绪数据</p>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl p-5 shadow-sm">

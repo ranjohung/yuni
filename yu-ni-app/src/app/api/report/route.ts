@@ -56,28 +56,36 @@ export async function POST(request: Request) {
       return new Response(JSON.stringify({ success: false, error: '本周报告已生成' }), { status: 400 })
     }
 
-    const trainingRecords = await prisma.trainingRecord.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    })
+    const weekAgo = new Date()
+    weekAgo.setDate(weekAgo.getDate() - 7)
 
-    const thisWeekRecords = trainingRecords.filter(r => {
-      const weekAgo = new Date()
-      weekAgo.setDate(weekAgo.getDate() - 7)
-      return new Date(r.createdAt) >= weekAgo
-    })
+    const [trainingRecords, checkIns, giftRecords, emotionDiaries, affection] = await Promise.all([
+      prisma.trainingRecord.findMany({
+        where: { userId, createdAt: { gte: weekAgo } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.checkIn.findMany({
+        where: { userId, checkInDate: { gte: weekAgo } },
+      }),
+      prisma.giftRecord.findMany({
+        where: { userId, createdAt: { gte: weekAgo } },
+      }),
+      prisma.emotionDiary.findMany({
+        where: { userId, createdAt: { gte: weekAgo } },
+      }),
+      prisma.affection.findUnique({ where: { userId } }),
+    ])
 
-    const trainingCount = thisWeekRecords.length
-    const completedCount = thisWeekRecords.filter(r => r.status === 1).length
+    const trainingCount = trainingRecords.length
+    const completedCount = trainingRecords.filter(r => r.status === 1).length
     const avgScore = trainingCount > 0
-      ? Math.round(thisWeekRecords.reduce((sum, r) => {
+      ? Math.round(trainingRecords.reduce((sum, r) => {
           const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores
           return sum + (typeof scores === 'object' && scores !== null ? Object.values(scores).reduce((a: number, b: unknown) => a + (Number(b) || 0), 0) / Object.keys(scores).length : Number(scores) || 0)
         }, 0) / trainingCount)
       : 0
 
-    const allScores = thisWeekRecords.map(r => {
+    const allScores = trainingRecords.map(r => {
       const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores
       if (typeof scores === 'object' && scores !== null) {
         return Object.values(scores).reduce((a: number, b: unknown) => a + (Number(b) || 0), 0) / Object.keys(scores).length
@@ -85,24 +93,63 @@ export async function POST(request: Request) {
       return Number(scores) || 0
     })
 
-    const improvements = trainingCount > 0
-      ? `本周完成了 ${trainingCount} 次训练，${completedCount} 次完成，平均得分 ${avgScore} 分。${
-          completedCount === trainingCount ? '全部完成，表现不错！' : `还有 ${trainingCount - completedCount} 次训练待完成。`
-        }`
-      : '本周还没有进行训练，开始你的第一次训练吧！'
+    const checkinCount = checkIns.length
+    const giftCount = giftRecords.length
+    const diaryCount = emotionDiaries.length
+    const affectionScore = affection?.score || 0
+
+    const emotionDistribution = {
+      positive: emotionDiaries.filter(d => ['happy', 'excited', 'grateful', 'peaceful'].includes(d.emotionTag || '')).length,
+      neutral: emotionDiaries.filter(d => ['calm', 'normal', 'tired'].includes(d.emotionTag || '')).length,
+      negative: emotionDiaries.filter(d => ['sad', 'anxious', 'angry', 'depressed'].includes(d.emotionTag || '')).length,
+    }
+
+    let improvements = ''
+    const improvementParts: string[] = []
+    if (trainingCount > 0) {
+      improvementParts.push(`完成了 ${trainingCount} 次训练，${completedCount} 次完成，平均得分 ${avgScore} 分`)
+    }
+    if (checkinCount > 0) {
+      improvementParts.push(`签到 ${checkinCount} 天`)
+    }
+    if (giftCount > 0) {
+      improvementParts.push(`送礼物 ${giftCount} 次`)
+    }
+    if (diaryCount > 0) {
+      improvementParts.push(`记录情绪日记 ${diaryCount} 篇`)
+    }
+    if (improvementParts.length > 0) {
+      improvements = improvementParts.join('，') + '。'
+      if (avgScore >= 80) improvements += '表现非常出色！'
+      else if (trainingCount > 0) improvements += '继续加油！'
+    } else {
+      improvements = '本周还没有进行训练，开始你的第一次训练吧！'
+    }
 
     const recommendation = avgScore >= 80
-      ? '表现非常出色！可以尝试挑战更高难度的场景。'
+      ? '表现非常出色！可以尝试挑战更高难度的场景，探索更多社交技巧。'
       : avgScore >= 60
-      ? '基础不错，建议多练习薄弱环节，提升社交能力。'
-      : '建议从基础场景开始，逐步提升训练难度。'
+      ? '基础不错，建议多练习薄弱环节，关注情绪识别和表达能力的提升。'
+      : '建议从基础场景开始，逐步提升训练难度，同时多与伴侣互动获取反馈。'
 
     const partner = await prisma.partner.findFirst({
       where: { userId, isActive: true },
     })
-    const partnerMessage = partner
-      ? `${partner.name}：${avgScore >= 80 ? '这周你进步很大，为你感到骄傲！' : avgScore >= 60 ? '继续加油，我看到你的努力了！' : '没关系，慢慢来，我会一直陪着你。'}`
-      : '继续加油！'
+
+    let partnerMessage = ''
+    if (partner) {
+      if (avgScore >= 80) {
+        partnerMessage = `${partner.name}：这周你进步很大，为你感到骄傲！继续保持这份热情，我们一起成长~`
+      } else if (avgScore >= 60 || trainingCount > 0) {
+        partnerMessage = `${partner.name}：我看到你的努力了！每一次训练都是一次成长，继续加油，我会一直陪着你。`
+      } else if (affectionScore >= 80) {
+        partnerMessage = `${partner.name}：虽然这周训练不多，但我们的关系很好！希望下周能看到你更多进步哦~`
+      } else {
+        partnerMessage = `${partner.name}：没关系，慢慢来。有时候休息也是为了更好地出发，我相信你一定可以的！`
+      }
+    } else {
+      partnerMessage = '继续加油！'
+    }
 
     const report = await prisma.weeklyReport.create({
       data: {
@@ -115,6 +162,11 @@ export async function POST(request: Request) {
           completedCount,
           totalTraining: trainingCount,
           scoreTrend: allScores,
+          checkinCount,
+          giftCount,
+          diaryCount,
+          affectionScore,
+          emotionDistribution,
         }),
         improvements,
         recommendation,
