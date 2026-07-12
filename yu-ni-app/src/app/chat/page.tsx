@@ -27,6 +27,8 @@ export default function ChatPage() {
   const [partner, setPartner] = useState<Partner | null>(null)
   const [isDegraded, setIsDegraded] = useState(false)
   const [modelName, setModelName] = useState('')
+  const [activeProvider, setActiveProvider] = useState('')
+  const [lastClassification, setLastClassification] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -49,6 +51,10 @@ export default function ChatPage() {
       if (data.success) {
         setIsDegraded(data.isDegraded)
         setModelName(data.modelName)
+        if (data.providers?.length > 0) {
+          const active = data.providers.find((p: { healthy: boolean }) => p.healthy)
+          setActiveProvider(active?.name || 'Ollama')
+        }
       }
     } catch (err) {
       console.error('Failed to fetch LLM status:', err)
@@ -84,6 +90,16 @@ export default function ChatPage() {
     }
   }
 
+  const getProviderName = (id: string): string => {
+    const names: Record<string, string> = {
+      deepseek: 'DeepSeek',
+      gemini: 'Gemini',
+      groq: 'Groq',
+      ollama: 'Ollama',
+    }
+    return names[id] || id
+  }
+
   const handleSend = async () => {
     if (!inputValue.trim()) return
 
@@ -111,6 +127,10 @@ export default function ChatPage() {
       }
 
       if (data.assistantMessage) {
+        if (data.llmInfo?.classification) {
+          setLastClassification(data.llmInfo.classification.reason)
+          setActiveProvider(getProviderName(data.llmInfo.usedProvider))
+        }
         setTimeout(() => {
           setMessages((prev) => [...prev, {
             ...data.assistantMessage,
@@ -143,12 +163,19 @@ export default function ChatPage() {
           <div>
             <h1 className="font-bold text-gray-800">{partner?.name || '伴侣'}</h1>
             <p className="text-xs text-green-500">在线</p>
-            {modelName && (
-              <p className="text-xs text-gray-400 flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                {modelName}
-              </p>
-            )}
+            <div className="flex items-center gap-2">
+              {activeProvider && (
+                <span className="text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full">
+                  {activeProvider}
+                </span>
+              )}
+              {modelName && (
+                <p className="text-xs text-gray-400 flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  {modelName}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -158,6 +185,15 @@ export default function ChatPage() {
           <div className="max-w-lg mx-auto flex items-center gap-2 text-amber-700">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <p className="text-xs">✨ 当前使用备用模型，对话体验可能略有不同</p>
+          </div>
+        </div>
+      )}
+
+      {lastClassification && !isDegraded && (
+        <div className="bg-primary-50 border-b border-primary-100 px-4 py-1.5">
+          <div className="max-w-lg mx-auto flex items-center gap-2 text-primary-600">
+            <Zap className="w-3 h-3 flex-shrink-0" />
+            <p className="text-xs">{lastClassification}</p>
           </div>
         </div>
       )}

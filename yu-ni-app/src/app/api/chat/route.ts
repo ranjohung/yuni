@@ -124,8 +124,10 @@ export async function POST(request: Request) {
     },
     llmInfo: {
       model: llmResponse.model,
+      usedProvider: llmResponse.usedProvider,
       isDegraded: llmResponse.isDegraded,
       latency: llmResponse.latency,
+      classification: llmResponse.classification,
     },
   }), { status: 201 })
 }

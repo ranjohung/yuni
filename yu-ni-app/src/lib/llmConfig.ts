@@ -25,7 +25,7 @@ export const LLM_CONFIG = {
 
 export interface LLMResponse {
   content: string
-  model: 'deepseek' | 'ollama'
+  model: string
   isDegraded: boolean
   latency: number
 }
