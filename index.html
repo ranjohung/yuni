@@ -30,77 +30,243 @@
     <div v-if="!loggedIn" class="flex flex-col h-screen max-w-md mx-auto bg-gradient-to-br from-indigo-50 via-white to-purple-50 shadow-lg overflow-auto">
       <!-- 登录页 -->
       <div v-if="!showRegister" class="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200">
-          <span class="text-4xl">💫</span>
+        <div class="relative inline-flex mb-4">
+          <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200">
+            <span class="text-4xl">💫</span>
+          </div>
+          <div class="absolute -top-1 -right-1 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center shadow-sm">
+            <span class="text-white text-xs">✦</span>
+          </div>
         </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">欢迎来到「与你」</h1>
-        <p class="text-gray-500 text-sm mb-8 text-center">你的专属AI社交模拟训练平台</p>
+        <h1 class="text-2xl font-bold text-gray-800 mb-1">与你</h1>
+        <p class="text-gray-500 text-sm mb-6 text-center">AI驱动的社交模拟训练平台</p>
 
-        <div class="w-full space-y-4 mb-6">
+        <!-- 登录方式切换 -->
+        <div class="w-full flex bg-gray-100 rounded-xl p-1 mb-5">
+          <button @click="loginMode = 'password'; loginError = ''"
+            class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300"
+            :class="loginMode === 'password' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+            <span class="mr-1.5">🔒</span>密码登录
+          </button>
+          <button @click="loginMode = 'sms'; loginError = ''"
+            class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300"
+            :class="loginMode === 'sms' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+            <span class="mr-1.5">💬</span>短信验证码
+          </button>
+        </div>
+
+        <div class="w-full space-y-4 mb-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">手机号</label>
-            <input v-model="phoneNumber" type="tel" placeholder="请输入手机号" maxlength="11"
-              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
+            <div class="relative group">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📱</span>
+              <input v-model="phoneNumber" type="tel" placeholder="请输入手机号" maxlength="11"
+                class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                  focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+            </div>
           </div>
-          <div>
+
+          <!-- 密码登录 -->
+          <div v-if="loginMode === 'password'">
             <label class="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
-            <input v-model="loginPassword" type="password" placeholder="请输入密码"
-              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
-            <p class="text-xs text-gray-400 mt-1.5 ml-1">体验账号：任意手机号 + 密码 123456</p>
+            <div class="relative group">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
+              <input v-model="loginPassword" :type="showLoginPwd ? 'text' : 'password'" placeholder="请输入密码"
+                class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                  focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+              <button @click="showLoginPwd = !showLoginPwd" type="button"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm">
+                {{ showLoginPwd ? '🙈' : '👁' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 短信验证码 -->
+          <div v-if="loginMode === 'sms'">
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">验证码</label>
+            <div class="flex gap-3">
+              <div class="relative group flex-1">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🛡️</span>
+                <input v-model="smsCode" type="text" placeholder="输入验证码" maxlength="6"
+                  class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                    focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+              </div>
+              <button @click="handleSendSms" :disabled="smsCountdown > 0" type="button"
+                class="px-4 py-3.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-300"
+                :class="smsCountdown > 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'">
+                {{ smsCountdown > 0 ? smsCountdown + 's' : '获取验证码' }}
+              </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-1.5 ml-1">体验验证码：123456</p>
           </div>
         </div>
 
-        <div v-if="loginError" class="w-full bg-red-50 border border-red-100 rounded-2xl p-3 mb-4">
-          <p class="text-sm text-red-600 text-center">{{ loginError }}</p>
+        <!-- 记住我 + 忘记密码 -->
+        <div v-if="loginMode === 'password'" class="w-full flex items-center justify-between mb-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <div @click="rememberMe = !rememberMe"
+              class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 cursor-pointer"
+              :class="rememberMe ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'">
+              <span v-if="rememberMe" class="text-white text-xs">✓</span>
+            </div>
+            <span class="text-sm text-gray-500">记住我</span>
+          </label>
+          <button @click="alert('请联系客服重置密码（体验版）')" class="text-sm text-indigo-500 hover:text-indigo-600 font-medium">忘记密码？</button>
+        </div>
+
+        <!-- 错误提示 -->
+        <div v-if="loginError" class="w-full bg-red-50 border border-red-100 rounded-2xl p-3.5 flex items-start gap-2.5 mb-3">
+          <span class="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-red-500 text-xs">⚠</span>
+          <p class="text-sm text-red-700">{{ loginError }}</p>
+        </div>
+
+        <!-- 演示提示 -->
+        <div v-if="showDemoInfo" class="w-full bg-green-50 border border-green-100 rounded-2xl p-3.5 flex items-start gap-2.5 mb-3">
+          <span class="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-green-500 text-xs">✓</span>
+          <div>
+            <p class="text-sm text-green-700 font-medium">已填入演示账号</p>
+            <p class="text-xs text-green-600 mt-0.5">手机号 13800138000，密码 123456</p>
+          </div>
         </div>
 
         <button @click="doLogin"
-          class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-[1.02] transition-all duration-300 mb-4">
-          登 录
+          class="w-full py-3.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold rounded-2xl
+            hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300
+            shadow-lg shadow-indigo-200 hover:shadow-xl active:scale-[0.98] mb-4">
+          {{ loginMode === 'password' ? '登 录' : '短信登录' }}
+        </button>
+
+        <!-- 演示账号快捷入口 -->
+        <div class="w-full relative my-4">
+          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
+          <div class="relative flex justify-center"><span class="px-4 bg-gradient-to-br from-indigo-50 via-white to-purple-50 text-xs text-gray-400">快捷体验</span></div>
+        </div>
+
+        <button @click="fillDemoAccount"
+          class="w-full py-3 border-2 border-dashed border-gray-200 text-gray-500 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-600 transition-all duration-300 text-sm flex items-center justify-center gap-2 mb-4">
+          👤 使用演示账号登录
         </button>
 
         <p class="text-sm text-gray-500">
           还没有账号？
-          <button @click="showRegister = true; loginError = ''" class="text-indigo-500 font-medium hover:text-indigo-600">立即注册</button>
+          <button @click="showRegister = true; loginError = ''; registerStep = 1" class="text-indigo-500 font-medium hover:text-indigo-600">立即注册</button>
         </p>
       </div>
 
       <!-- 注册页 -->
-      <div v-else class="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200">
-          <span class="text-4xl">✨</span>
+      <div v-else class="flex-1 flex flex-col px-6 py-10">
+        <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
+          <span class="text-2xl">✨</span>
         </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">创建账号</h1>
-        <p class="text-gray-500 text-sm mb-8 text-center">开启你的社交成长之旅</p>
+        <h1 class="text-2xl font-bold text-gray-800 text-center mb-1">创建账号</h1>
+        <p class="text-gray-500 text-sm text-center mb-6">开启你的社交成长之旅</p>
 
-        <div class="w-full space-y-4 mb-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">手机号</label>
-            <input v-model="registerPhone" type="tel" placeholder="请输入手机号" maxlength="11"
-              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">昵称</label>
-            <input v-model="registerNickname" type="text" placeholder="给自己取个昵称" maxlength="12"
-              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
-            <input v-model="registerPassword" type="password" placeholder="设置密码（至少6位）"
-              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
-          </div>
+        <!-- 步骤指示器 -->
+        <div class="flex items-center justify-center gap-3 mb-6">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
+            :class="registerStep === 1 ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-indigo-100 text-indigo-500'">1</div>
+          <div class="w-16 h-0.5 rounded transition-all duration-300" :class="registerStep === 2 ? 'bg-indigo-500' : 'bg-gray-200'"></div>
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
+            :class="registerStep === 2 ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-gray-100 text-gray-400'">2</div>
         </div>
 
-        <div v-if="registerError" class="w-full bg-red-50 border border-red-100 rounded-2xl p-3 mb-4">
-          <p class="text-sm text-red-600 text-center">{{ registerError }}</p>
+        <div class="w-full space-y-4 mb-4">
+          <!-- 步骤1：手机号验证 -->
+          <template v-if="registerStep === 1">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">手机号</label>
+              <div class="relative group">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📱</span>
+                <input v-model="registerPhone" type="tel" placeholder="请输入手机号" maxlength="11"
+                  class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                    focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">验证码</label>
+              <div class="flex gap-3">
+                <div class="relative group flex-1">
+                  <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🛡️</span>
+                  <input v-model="registerSmsCode" type="text" placeholder="输入验证码" maxlength="6"
+                    class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                      focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+                </div>
+                <button @click="handleRegSendSms" :disabled="regSmsCountdown > 0" type="button"
+                  class="px-4 py-3.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-300"
+                  :class="regSmsCountdown > 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'">
+                  {{ regSmsCountdown > 0 ? regSmsCountdown + 's' : '获取验证码' }}
+                </button>
+              </div>
+              <p class="text-xs text-gray-400 mt-1.5 ml-1">体验验证码：123456</p>
+            </div>
+          </template>
+
+          <!-- 步骤2：填写信息 -->
+          <template v-if="registerStep === 2">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">昵称</label>
+              <div class="relative group">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">👤</span>
+                <input v-model="registerNickname" type="text" placeholder="给自己取个昵称" maxlength="12"
+                  class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                    focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+              </div>
+              <p class="text-xs text-gray-400 mt-1.5 ml-1">{{ registerNickname.length }}/12</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
+              <div class="relative group">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
+                <input v-model="registerPassword" :type="showRegPwd ? 'text' : 'password'" placeholder="设置密码（至少6位）"
+                  class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                    focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+                <button @click="showRegPwd = !showRegPwd" type="button"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm">
+                  {{ showRegPwd ? '🙈' : '👁' }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">确认密码</label>
+              <div class="relative group">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
+                <input v-model="registerConfirmPwd" :type="showRegConfirmPwd ? 'text' : 'password'" placeholder="请再次输入密码"
+                  class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 placeholder:text-gray-400
+                    focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50 transition-all duration-300">
+                <button @click="showRegConfirmPwd = !showRegConfirmPwd" type="button"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm">
+                  {{ showRegConfirmPwd ? '🙈' : '👁' }}
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div @click="agreeTerms = !agreeTerms"
+                class="w-5 h-5 rounded-md border-2 flex items-center justify-center cursor-pointer transition-all duration-200 flex-shrink-0"
+                :class="agreeTerms ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'">
+                <span v-if="agreeTerms" class="text-white text-xs">✓</span>
+              </div>
+              <p class="text-sm text-gray-500">我已阅读并同意
+                <button class="text-indigo-500 mx-0.5">《服务协议》</button>和
+                <button class="text-indigo-500 ml-0.5">《隐私政策》</button>
+              </p>
+            </div>
+          </template>
+        </div>
+
+        <!-- 注册错误提示 -->
+        <div v-if="registerError" class="w-full bg-red-50 border border-red-100 rounded-2xl p-3.5 flex items-start gap-2.5 mb-3">
+          <span class="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-red-500 text-xs">⚠</span>
+          <p class="text-sm text-red-700">{{ registerError }}</p>
         </div>
 
         <button @click="doRegister"
-          class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-[1.02] transition-all duration-300 mb-4">
-          注 册
+          class="w-full py-3.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold rounded-2xl
+            hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300
+            shadow-lg shadow-indigo-200 hover:shadow-xl active:scale-[0.98] mb-4">
+          {{ registerStep === 1 ? '下一步' : '注 册' }}
         </button>
 
-        <p class="text-sm text-gray-500">
+        <p class="text-sm text-gray-500 text-center">
           已有账号？
           <button @click="showRegister = false; registerError = ''" class="text-indigo-500 font-medium hover:text-indigo-600">立即登录</button>
         </p>
@@ -1238,6 +1404,25 @@
         const registerNickname = ref('')
         const registerPassword = ref('')
         const registerError = ref('')
+        const loginMode = ref('password')
+        const showLoginPwd = ref(false)
+        const smsCode = ref('')
+        const smsCountdown = ref(0)
+        const rememberMe = ref(false)
+        const showDemoInfo = ref(false)
+        const registerStep = ref(1)
+        const registerSmsCode = ref('')
+        const regSmsCountdown = ref(0)
+        const registerConfirmPwd = ref('')
+        const showRegPwd = ref(false)
+        const showRegConfirmPwd = ref(false)
+        const agreeTerms = ref(false)
+        // 加载记住的手机号
+        const savedPhone = localStorage.getItem('yn_remember_phone')
+        if (savedPhone) {
+          phoneNumber.value = savedPhone
+          rememberMe.value = true
+        }
         const partners = ref([
           {
             id: 1,
@@ -1722,21 +1907,36 @@
             loginError.value = '请输入手机号'
             return
           }
-          if (!loginPassword.value) {
-            loginError.value = '请输入密码'
-            return
-          }
-          if (loginPassword.value !== '123456') {
-            loginError.value = '密码错误，体验密码为 123456'
-            return
+          if (loginMode.value === 'password') {
+            if (!loginPassword.value) {
+              loginError.value = '请输入密码'
+              return
+            }
+            if (loginPassword.value !== '123456') {
+              loginError.value = '密码错误，体验密码为 123456'
+              return
+            }
+          } else {
+            if (!smsCode.value) {
+              loginError.value = '请输入验证码'
+              return
+            }
+            if (smsCode.value !== '123456') {
+              loginError.value = '验证码错误，体验验证码为 123456'
+              return
+            }
           }
           loginError.value = ''
+          if (rememberMe.value) {
+            localStorage.setItem('yn_remember_phone', phoneNumber.value.trim())
+          } else {
+            localStorage.removeItem('yn_remember_phone')
+          }
           const savedUser = localStorage.getItem('yn_user_' + phoneNumber.value.trim())
           if (savedUser) {
             const userData = JSON.parse(savedUser)
             user.value.nickname = userData.nickname || '用户'
           } else {
-            // 新用户自动注册
             const newUser = { phone: phoneNumber.value.trim(), nickname: '用户' + phoneNumber.value.slice(-4) }
             localStorage.setItem('yn_user_' + phoneNumber.value.trim(), JSON.stringify(newUser))
             user.value.nickname = newUser.nickname
@@ -1747,21 +1947,69 @@
           loggedIn.value = true
         }
 
-        const doRegister = () => {
-          if (!registerPhone.value.trim()) {
-            registerError.value = '请输入手机号'
+        const handleSendSms = () => {
+          if (!phoneNumber.value.trim() || phoneNumber.value.trim().length < 11) {
+            loginError.value = '请输入正确的手机号'
             return
           }
-          if (registerPhone.value.trim().length < 11) {
+          loginError.value = ''
+          smsCountdown.value = 60
+          const timer = setInterval(() => { smsCountdown.value--; if (smsCountdown.value <= 0) clearInterval(timer) }, 1000)
+          alert('验证码已发送（体验版验证码：123456）')
+        }
+
+        const handleRegSendSms = () => {
+          if (!registerPhone.value.trim() || registerPhone.value.trim().length < 11) {
             registerError.value = '请输入正确的手机号'
             return
           }
+          registerError.value = ''
+          regSmsCountdown.value = 60
+          const timer = setInterval(() => { regSmsCountdown.value--; if (regSmsCountdown.value <= 0) clearInterval(timer) }, 1000)
+          alert('验证码已发送（体验版验证码：123456）')
+        }
+
+        const fillDemoAccount = () => {
+          phoneNumber.value = '13800138000'
+          loginPassword.value = '123456'
+          loginMode.value = 'password'
+          showDemoInfo.value = true
+          setTimeout(() => { showDemoInfo.value = false }, 3000)
+        }
+
+        const doRegister = () => {
+          if (registerStep.value === 1) {
+            if (!registerPhone.value.trim() || registerPhone.value.trim().length < 11) {
+              registerError.value = '请输入正确的手机号'
+              return
+            }
+            if (!registerSmsCode.value) {
+              registerError.value = '请输入验证码'
+              return
+            }
+            if (registerSmsCode.value !== '123456') {
+              registerError.value = '验证码错误'
+              return
+            }
+            registerError.value = ''
+            registerStep.value = 2
+            return
+          }
+          // 第二步验证
           if (!registerNickname.value.trim()) {
             registerError.value = '请输入昵称'
             return
           }
           if (!registerPassword.value || registerPassword.value.length < 6) {
             registerError.value = '密码至少6位'
+            return
+          }
+          if (registerPassword.value !== registerConfirmPwd.value) {
+            registerError.value = '两次密码输入不一致'
+            return
+          }
+          if (!agreeTerms.value) {
+            registerError.value = '请阅读并同意服务协议'
             return
           }
           registerError.value = ''
@@ -1786,6 +2034,10 @@
           phoneNumber.value = ''
           loginPassword.value = ''
           loginError.value = ''
+          loginMode.value = 'password'
+          smsCode.value = ''
+          showRegister.value = false
+          registerStep.value = 1
         }
 
         const finishTraining = () => {
@@ -1798,6 +2050,9 @@
         return {
           currentTab, loggedIn, showRegister, phoneNumber, loginPassword, loginError,
           registerPhone, registerNickname, registerPassword, registerError,
+          loginMode, showLoginPwd, smsCode, smsCountdown, rememberMe, showDemoInfo,
+          registerStep, registerSmsCode, regSmsCountdown, registerConfirmPwd,
+          showRegPwd, showRegConfirmPwd, agreeTerms,
           partner, partners, selectedPartner, user, affection, checkedInToday, checkinStreak,
           abilityStats, weeklyProgress, recentTrainings, isEvening, goodnightPlan,
           abilityAverage, abilityStatsArray, affectionLevel, greeting, radarChart,
@@ -1809,7 +2064,7 @@
           growthMilestones, learningCourses,
           showCreatePartner, showPartnerSettings,
           doCheckin, openChat, sendChat, startTraining, selectOption, finishTraining,
-          doLogin, doRegister, doLogout,
+          doLogin, doRegister, doLogout, handleSendSms, handleRegSendSms, fillDemoAccount,
           getCoreTypeLabel, getRevealedPreferences, getUnrevealedCount, switchPartner, deletePartner
         }
       }
