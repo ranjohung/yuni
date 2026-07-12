@@ -50,6 +50,10 @@ export default function ProfilePage() {
     courseCount: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [showRealnameModal, setShowRealnameModal] = useState(false)
+  const [realname, setRealname] = useState('')
+  const [idCard, setIdCard] = useState('')
+  const [realnameStatus, setRealnameStatus] = useState<'unverified' | 'verifying' | 'verified'>('unverified')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -95,6 +99,28 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     await signOut()
     router.push('/login')
+  }
+
+  const handleRealnameSubmit = async () => {
+    if (!realname.trim()) {
+      alert('请输入真实姓名')
+      return
+    }
+    if (!idCard.trim() || idCard.trim().length !== 18) {
+      alert('请输入正确的身份证号码')
+      return
+    }
+
+    setRealnameStatus('verifying')
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      setRealnameStatus('verified')
+      setShowRealnameModal(false)
+      alert('实名认证成功！')
+    } catch {
+      setRealnameStatus('unverified')
+      alert('实名认证失败，请重试')
+    }
   }
 
   const membershipBenefits = [
@@ -367,14 +393,20 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl shadow-sm p-5">
           <div className="space-y-2">
             <button
-              onClick={() => {}}
+              onClick={() => setShowRealnameModal(true)}
               className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-all"
             >
               <div className="w-10 h-10 bg-red-100 text-red-500 rounded-full flex items-center justify-center">
                 <Shield className="w-5 h-5" />
               </div>
-              <span className="flex-1 text-left font-medium text-gray-800">隐私设置</span>
-              <ArrowRight className="w-4 h-4 text-gray-400" />
+              <span className="flex-1 text-left font-medium text-gray-800">实名认证</span>
+              {realnameStatus === 'verified' ? (
+                <span className="text-green-500 text-sm">已认证</span>
+              ) : realnameStatus === 'verifying' ? (
+                <span className="text-yellow-500 text-sm">审核中</span>
+              ) : (
+                <span className="text-gray-400 text-sm">未认证</span>
+              )}
             </button>
 
             <button
@@ -414,6 +446,70 @@ export default function ProfilePage() {
           <p className="mt-1">与你 · 让社交更简单</p>
         </div>
       </div>
+
+      {showRealnameModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-800">实名认证</h3>
+              <button onClick={() => setShowRealnameModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+
+            {realnameStatus === 'verified' ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-green-500" />
+                </div>
+                <h4 className="text-xl font-bold text-gray-800 mb-2">已完成实名认证</h4>
+                <p className="text-gray-500">您的身份信息已验证通过</p>
+                <button onClick={() => setShowRealnameModal(false)} className="mt-6 w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-xl">确定</button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">真实姓名</label>
+                    <input
+                      type="text"
+                      value={realname}
+                      onChange={(e) => setRealname(e.target.value)}
+                      placeholder="请输入真实姓名"
+                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-primary-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">身份证号码</label>
+                    <input
+                      type="text"
+                      value={idCard}
+                      onChange={(e) => setIdCard(e.target.value)}
+                      placeholder="请输入18位身份证号码"
+                      maxLength={18}
+                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-primary-500 outline-none transition-all"
+                    />
+                    <p className="text-xs text-gray-400 mt-2">我们会严格保护您的个人信息安全</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleRealnameSubmit}
+                  disabled={realnameStatus === 'verifying'}
+                  className="w-full py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-secondary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {realnameStatus === 'verifying' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      验证中...
+                    </span>
+                  ) : (
+                    '提交验证'
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

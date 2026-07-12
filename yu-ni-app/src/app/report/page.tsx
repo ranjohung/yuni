@@ -18,6 +18,9 @@ import {
   Brain,
   MessageCircle,
   CheckCircle,
+  PieChart,
+  Activity,
+  Zap,
 } from 'lucide-react'
 
 interface ReportScores {
@@ -187,6 +190,93 @@ export default function ReportPage() {
               </div>
             </div>
           )}
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <PieChart className="w-5 h-5 text-purple-500" />
+              <h3 className="font-bold text-gray-800">能力雷达</h3>
+            </div>
+            <div className="relative w-full aspect-square max-w-[240px] mx-auto">
+              <svg viewBox="0 0 200 200" className="w-full h-full">
+                {[1, 0.8, 0.6, 0.4, 0.2].map((level, i) => (
+                  <polygon
+                    key={i}
+                    points={[...Array(6)].map((_, j) => {
+                      const angle = (j * 60 - 90) * (Math.PI / 180)
+                      return `${100 + 80 * level * Math.cos(angle)},${100 + 80 * level * Math.sin(angle)}`
+                    }).join(' ')}
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                  />
+                ))}
+                {[...Array(6)].map((_, i) => {
+                  const angle = (i * 60 - 90) * (Math.PI / 180)
+                  return (
+                    <line
+                      key={i}
+                      x1="100"
+                      y1="100"
+                      x2={100 + 80 * Math.cos(angle)}
+                      y2={100 + 80 * Math.sin(angle)}
+                      stroke="#e5e7eb"
+                      strokeWidth="1"
+                    />
+                  )
+                })}
+                <polygon
+                  points={[75, 85, 95, 80, 90, 60, 70, 50, 50, 65, 55, 85].map((v, i) => {
+                    const angle = (i * 60 - 90) * (Math.PI / 180)
+                    return `${100 + v * Math.cos(angle)},${100 + v * Math.sin(angle)}`
+                  }).join(' ')}
+                  fill="rgba(147, 51, 234, 0.2)"
+                  stroke="#9333ea"
+                  strokeWidth="2"
+                />
+                {['倾听', '表达', '共情', '自信', '反馈', '决策'].map((label, i) => {
+                  const angle = (i * 60 - 90) * (Math.PI / 180)
+                  const x = 100 + 95 * Math.cos(angle)
+                  const y = 100 + 95 * Math.sin(angle)
+                  return (
+                    <text
+                      key={label}
+                      x={x}
+                      y={y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="text-xs fill-gray-600"
+                    >
+                      {label}
+                    </text>
+                  )
+                })}
+              </svg>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="w-5 h-5 text-orange-500" />
+              <h3 className="font-bold text-gray-800">情绪分析</h3>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-green-50 rounded-xl p-3 text-center">
+                <div className="text-2xl mb-1">😊</div>
+                <p className="text-sm font-bold text-green-600">积极</p>
+                <p className="text-xs text-gray-500">65%</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-3 text-center">
+                <div className="text-2xl mb-1">😐</div>
+                <p className="text-sm font-bold text-blue-600">中性</p>
+                <p className="text-xs text-gray-500">25%</p>
+              </div>
+              <div className="bg-red-50 rounded-xl p-3 text-center">
+                <div className="text-2xl mb-1">😔</div>
+                <p className="text-sm font-bold text-red-600">消极</p>
+                <p className="text-xs text-gray-500">10%</p>
+              </div>
+            </div>
+          </div>
 
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
