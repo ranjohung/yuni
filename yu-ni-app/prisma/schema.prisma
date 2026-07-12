@@ -34,6 +34,7 @@ model User {
   nvcRecords            NvcRecord[]
   giftRecords           GiftRecord[]
   relationshipMilestones RelationshipMilestone[]
+  relationshipEvents    RelationshipEvent[]
   sharingConsent        SharingConsent?
   invitations           Invitation[]
   emotionRecords        EmotionRecord[]
@@ -235,6 +236,18 @@ model RelationshipMilestone {
 
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   partner         Partner     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+}
+
+model RelationshipEvent {
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  type            String
+  reason          String
+  affectionChange Int
+  newScore        Int
+  createdAt       DateTime    @default(now())
+
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Invitation {

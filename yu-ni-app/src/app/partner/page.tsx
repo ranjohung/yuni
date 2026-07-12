@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Navbar from '@/components/Navbar'
-import { Heart, MessageCircle, Gift, Settings, Plus, Trash2, CheckCircle2, Edit3, ArrowRight, Camera, Sparkles, Calendar } from 'lucide-react'
+import { Heart, MessageCircle, Gift, Settings, Plus, Trash2, CheckCircle2, Edit3, ArrowRight, Camera, Sparkles, Calendar, AlertTriangle, Zap, Clock, Shield, XCircle } from 'lucide-react'
 
 interface Partner {
   id: number
@@ -180,9 +180,62 @@ export default function PartnerPage() {
                 <span>{affection}%</span>
               </div>
               <div className="w-full bg-white/20 rounded-full h-3">
-                <div className="bg-white h-3 rounded-full transition-all duration-500" style={{ width: `${affection}%` }} />
+                <div className={`h-3 rounded-full transition-all duration-500 ${affection < 30 ? 'bg-red-400' : affection < 60 ? 'bg-yellow-400' : 'bg-white'}`} style={{ width: `${affection}%` }} />
               </div>
             </div>
+
+            {affection < 50 && (
+              <div className={`mt-4 p-4 rounded-xl ${affection < 30 ? 'bg-red-500/30' : 'bg-yellow-500/20'} backdrop-blur-sm`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {affection < 30 ? (
+                    <XCircle className="w-5 h-5 text-red-300" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-yellow-300" />
+                  )}
+                  <span className={`font-bold ${affection < 30 ? 'text-red-200' : 'text-yellow-200'}`}>
+                    {affection < 30 ? '关系危机' : '关系冷淡'}
+                  </span>
+                </div>
+                <p className="text-white/80 text-sm mb-3">
+                  {affection < 30 ? '伴侣对你的好感度已经很低了，如果不及时采取行动，你们的关系可能会破裂。' : '伴侣感觉有些孤单，快多陪陪TA吧！'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => router.push('/chat')}
+                    className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    主动聊天
+                  </button>
+                  <button
+                    onClick={() => router.push('/gifts')}
+                    className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all"
+                  >
+                    <Gift className="w-3 h-3" />
+                    送礼物
+                  </button>
+                  <button
+                    onClick={() => router.push('/training')}
+                    className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all"
+                  >
+                    <Zap className="w-3 h-3" />
+                    互动训练
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {affection >= 80 && (
+              <div className="mt-4 p-4 bg-green-500/20 rounded-xl backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="w-5 h-5 text-green-300" />
+                  <span className="font-bold text-green-200">亲密无间</span>
+                </div>
+                <p className="text-white/80 text-sm">
+                  你们的关系非常好！继续保持互动，解锁更多专属回忆吧~
+                </p>
+              </div>
+            )}
 
             <div className="mt-4 flex gap-3">
               <button
