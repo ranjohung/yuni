@@ -289,7 +289,10 @@ export default function GrowthPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <button className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-3 text-left">
+          <button
+            onClick={() => router.push('/cbt')}
+            className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-3 text-left"
+          >
             <div className="w-12 h-12 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center">
               <Brain className="w-6 h-6" />
             </div>
@@ -298,7 +301,10 @@ export default function GrowthPage() {
             <ArrowRight className="w-4 h-4 text-gray-400 self-end" />
           </button>
 
-          <button className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-3 text-left">
+          <button
+            onClick={() => router.push('/nvc')}
+            className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-3 text-left"
+          >
             <div className="w-12 h-12 bg-green-100 text-green-500 rounded-full flex items-center justify-center">
               <Heart className="w-6 h-6" />
             </div>
