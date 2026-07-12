@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Navbar from '@/components/Navbar'
-import { Send, Mic, Smile, Paperclip, ArrowLeft, AlertTriangle, Zap } from 'lucide-react'
+import { Send, Mic, Smile, Paperclip, ArrowLeft, AlertTriangle, Zap, Brain, Info } from 'lucide-react'
 
 interface Message {
   id: number
@@ -177,6 +177,13 @@ export default function ChatPage() {
               )}
             </div>
           </div>
+          <a
+            href="/llm-status"
+            className="ml-auto w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all"
+            title="查看AI模型状态"
+          >
+            <Brain className="w-4 h-4 text-gray-500" />
+          </a>
         </div>
       </div>
 

@@ -57,7 +57,7 @@
           <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-3xl">{{ partner.avatar }}</div>
           <div class="flex-1">
             <div class="font-semibold text-lg">{{ partner.name }}</div>
-            <div class="text-sm text-white/80">{{ partner.title }} · ❤️ Lv.{{ affectionLevel }}</div>
+            <div class="text-sm text-white/80">{{ partner.title }} · ❤️ {{ affectionLevel.name }}</div>
           </div>
         </div>
         <div class="mt-6">
@@ -241,6 +241,43 @@
           <span>💡</span>
           <span>学习更多沟通技巧</span>
         </button>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm mt-4">
+        <div class="flex items-center gap-2 mb-4">
+          <span>🚀</span>
+          <h3 class="font-bold text-gray-800">更多功能</h3>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <a href="http://localhost:3000/llm-status" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center"><span>🧠</span></div>
+            <span class="text-xs text-gray-600">AI模型状态</span>
+          </a>
+          <a href="http://localhost:3000/voice-call" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-green-100 text-green-500 rounded-full flex items-center justify-center"><span>📞</span></div>
+            <span class="text-xs text-gray-600">语音通话</span>
+          </a>
+          <a href="http://localhost:3000/talent" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center"><span>🎭</span></div>
+            <span class="text-xs text-gray-600">才艺</span>
+          </a>
+          <a href="http://localhost:3000/timetravel" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center"><span>⏰</span></div>
+            <span class="text-xs text-gray-600">时光回溯</span>
+          </a>
+          <a href="http://localhost:3000/shop" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center"><span>🛍️</span></div>
+            <span class="text-xs text-gray-600">商城</span>
+          </a>
+          <a href="http://localhost:3000/character" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center"><span>🎨</span></div>
+            <span class="text-xs text-gray-600">角色自定义</span>
+          </a>
+          <a href="http://localhost:3000/mentalhealth" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-teal-100 text-teal-500 rounded-full flex items-center justify-center"><span>💚</span></div>
+            <span class="text-xs text-gray-600">心理健康</span>
+          </a>
+        </div>
       </div>
     </main>
 
@@ -565,10 +602,10 @@
       <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-bold text-gray-800">能力雷达</h3>
-          <span class="text-xs text-gray-400">综合评分 73</span>
+          <span class="text-xs text-gray-400">综合评分 {{ abilityAverage }}</span>
         </div>
         <div class="flex items-center justify-around">
-          <div class="flex flex-col items-center gap-2" v-for="(item, index) in abilityStats" :key="index">
+          <div class="flex flex-col items-center gap-2" v-for="(item, index) in abilityStatsArray" :key="index">
             <div class="relative w-12 h-12">
               <svg class="w-full h-full transform -rotate-90">
                 <circle cx="24" cy="24" r="20" stroke="#f3f4f6" stroke-width="8" fill="none" />
@@ -776,7 +813,7 @@
           <div class="flex-1">
             <h4 class="font-bold text-gray-800">{{ partner.name }}</h4>
             <p class="text-gray-500 text-sm">类型：{{ partner.coreType }}</p>
-            <p class="text-gray-500 text-sm">好感度等级：{{ affectionLevel }}</p>
+            <p class="text-gray-500 text-sm">好感度等级：{{ affectionLevel.name }}</p>
           </div>
           <div class="w-20">
             <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -1183,14 +1220,21 @@
         const checkedInToday = ref(localStorage.getItem('lastCheckin') === new Date().toDateString())
         const checkinStreak = ref(parseInt(localStorage.getItem('checkinStreak') || '3'))
 
-        const abilityStats = ref([
-          { label: '沟通', value: 75 },
-          { label: '共情', value: 82 },
-          { label: '自信', value: 68 },
-          { label: '倾听', value: 78 },
-          { label: '表达', value: 72 },
-          { label: '应变', value: 65 },
-        ])
+        const AFFECTION_LEVELS = [
+          { level: 1, minScore: 0, maxScore: 99, name: '初识' },
+          { level: 2, minScore: 100, maxScore: 299, name: '熟悉' },
+          { level: 3, minScore: 300, maxScore: 599, name: '亲密' },
+          { level: 4, minScore: 600, maxScore: 999, name: '默契' },
+          { level: 5, minScore: 1000, maxScore: Infinity, name: '灵魂伴侣' },
+        ]
+
+        const abilityStats = ref({
+          empathy: 82,
+          expression: 72,
+          listening: 78,
+          confidence: 68,
+          strategy: 65,
+        })
 
         const growthMilestones = ref([
           { id: 1, name: '初次训练', icon: '🌟', description: '完成第一次社交训练', unlocked: true, unlockedAt: '7月4日', target: '完成1次训练' },
@@ -1226,14 +1270,22 @@
         })
         const abilityAverage = computed(() => {
           const s = abilityStats.value
-          return Math.round(s.reduce((sum, item) => sum + item.value, 0) / s.length)
+          return Math.round((s.empathy + s.expression + s.listening + s.confidence + s.strategy) / 5)
+        })
+        const abilityStatsArray = computed(() => {
+          const s = abilityStats.value
+          return [
+            { label: '同理心', key: 'empathy', value: s.empathy },
+            { label: '表达', key: 'expression', value: s.expression },
+            { label: '倾听', key: 'listening', value: s.listening },
+            { label: '自信', key: 'confidence', value: s.confidence },
+            { label: '策略', key: 'strategy', value: s.strategy },
+          ]
         })
         const affectionLevel = computed(() => {
-          if (affection.value >= 600) return 4
-          if (affection.value >= 400) return 3
-          if (affection.value >= 200) return 2
-          if (affection.value >= 1) return 1
-          return 0
+          return AFFECTION_LEVELS.find(
+            (level) => affection.value >= level.minScore && affection.value <= level.maxScore
+          ) || AFFECTION_LEVELS[0]
         })
         const greeting = computed(() => {
           const hour = new Date().getHours()
@@ -1577,7 +1629,7 @@
         return {
           currentTab, partner, partners, selectedPartner, user, affection, checkedInToday, checkinStreak,
           abilityStats, weeklyProgress, recentTrainings, isEvening, goodnightPlan,
-          abilityAverage, affectionLevel, greeting, radarChart,
+          abilityAverage, abilityStatsArray, affectionLevel, greeting, radarChart,
           showChat, chatInput, chatMessages, isTyping,
           currentTraining, currentRound, trainingMessages, trainingFinished, trainingScore, affectionGain, trainingFeedback,
           trainingScenes, trainingCategories, currentCategory, filteredScenes, trainingHistory, achievements,

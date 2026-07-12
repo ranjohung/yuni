@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth'
 import Navbar from '@/components/Navbar'
-import { User, Settings, HelpCircle, Share2, Heart, Star, Coins, Clock, LogOut, Bell, Shield, Database, Info, ArrowRight, Trophy, Target, Zap, ShoppingBag, Clock as ClockIcon, Brain, Palette } from 'lucide-react'
+import { User, Settings, HelpCircle, Share2, Heart, Star, Coins, Clock, LogOut, Bell, Shield, Database, Info, ArrowRight, Trophy, Target, Zap, ShoppingBag, Clock as ClockIcon, Brain, Palette, Activity } from 'lucide-react'
 import { MEMBERSHIP_LABELS, AFFECTION_LEVELS } from '@/lib/types'
 
 interface ProfileData {
@@ -348,6 +348,17 @@ export default function ProfilePage() {
                 <Share2 className="w-5 h-5" />
               </div>
               <span className="flex-1 text-left font-medium text-gray-800">邀请好友</span>
+              <ArrowRight className="w-4 h-4 text-gray-400" />
+            </button>
+
+            <button
+              onClick={() => router.push('/llm-status')}
+              className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-all"
+            >
+              <div className="w-10 h-10 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center">
+                <Activity className="w-5 h-5" />
+              </div>
+              <span className="flex-1 text-left font-medium text-gray-800">AI模型状态</span>
               <ArrowRight className="w-4 h-4 text-gray-400" />
             </button>
           </div>

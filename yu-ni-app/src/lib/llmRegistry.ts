@@ -14,6 +14,24 @@ export interface RegistryOptions {
   partnerPersonality?: string
 }
 
+/**
+ * 检查每个provider的API key是否已配置
+ */
+function checkProviderApiKey(providerId: string): boolean {
+  switch (providerId) {
+    case 'deepseek':
+      return !!process.env.DEEPSEEK_API_KEY
+    case 'gemini':
+      return !!process.env.GEMINI_API_KEY
+    case 'groq':
+      return !!process.env.GROQ_API_KEY
+    case 'ollama':
+      return true // 本地模型不需要API key
+    default:
+      return false
+  }
+}
+
 class LLMRegistry {
   private providers: Map<string, LLMProvider> = new Map()
   private healthCache: Map<string, { healthy: boolean; checkedAt: number }> = new Map()
@@ -39,7 +57,7 @@ class LLMRegistry {
   }
 
   getAvailableProviders(): LLMProvider[] {
-    return this.getAllProviders().filter(p => p.isAvailable)
+    return this.getAllProviders().filter(p => p.isAvailable && checkProviderApiKey(p.id))
   }
 
   async checkProviderHealth(providerId: string): Promise<boolean> {
@@ -137,29 +155,33 @@ class LLMRegistry {
       model: string
       healthy: boolean
       isFallback: boolean
+      hasApiKey: boolean
     }>
   }> {
     const providerStatuses = await Promise.all(
       this.getAllProviders().map(async (p) => {
-        const healthy = await this.checkProviderHealth(p.id)
+        const hasApiKey = checkProviderApiKey(p.id)
+        const healthy = hasApiKey ? await this.checkProviderHealth(p.id) : false
         return {
           id: p.id,
           name: p.name,
           model: p.model,
           healthy,
           isFallback: p.id === 'ollama',
+          hasApiKey,
         }
       })
     )
 
     const activeProvider = providerStatuses.find(p => p.healthy && !p.isFallback)
     const degraded = !activeProvider
+    const hasAnyKey = providerStatuses.some(p => p.hasApiKey)
 
     return {
       isDegraded: degraded,
-      status: degraded ? 'degraded' : 'healthy',
-      model: activeProvider?.id || 'ollama',
-      modelName: activeProvider?.model || 'ollama-fallback',
+      status: degraded ? (hasAnyKey ? 'degraded' : 'unconfigured') : 'healthy',
+      model: activeProvider?.id || (hasAnyKey ? 'deepseek' : 'none'),
+      modelName: activeProvider?.model || '未配置',
       providers: providerStatuses,
     }
   }

@@ -11,16 +11,18 @@ export async function GET() {
       modelName: status.modelName,
       providers: status.providers,
       healthCheckStatus: status.healthCheckStatus,
+      timestamp: new Date().toISOString(),
     }), { status: 200 })
   } catch (err) {
     return new Response(JSON.stringify({
       success: false,
       isDegraded: true,
       status: 'unknown',
-      model: 'ollama',
-      modelName: 'fallback',
+      model: 'none',
+      modelName: '未知',
       providers: [],
       healthCheckStatus: 'unknown',
+      timestamp: new Date().toISOString(),
     }), { status: 200 })
   }
 }
