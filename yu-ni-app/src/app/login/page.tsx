@@ -82,20 +82,23 @@ export default function LoginPage() {
     }
 
     if (loginMode === 'sms') {
-      // 短信验证码登录 - 自动注册或登录
+      // 短信验证码登录 - 使用专门的SMS登录API
       try {
-        const res = await fetch('/api/user/register', {
+        const res = await fetch('/api/auth/sms-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             phone: phone.trim(),
-            password: 'sms_user_' + phone.trim(),
-            confirmPassword: 'sms_user_' + phone.trim(),
-            nickname: '用户' + phone.trim().slice(-4),
+            smsCode: smsCode.trim(),
           }),
         })
         const data = await res.json()
-        // 如果已注册忽略错误，尝试登录
+        if (!data.success) {
+          setError(data.error || '登录失败，请重试')
+          setIsLoading(false)
+          return
+        }
+        // 使用NextAuth登录
         const result = await signIn('credentials', {
           phone: phone.trim(),
           password: 'sms_user_' + phone.trim(),
@@ -165,22 +168,20 @@ export default function LoginPage() {
           <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
             <button
               onClick={() => { setLoginMode('password'); setError('') }}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                loginMode === 'password'
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${loginMode === 'password'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
             >
               <Lock className="w-4 h-4 inline mr-1.5" />
               密码登录
             </button>
             <button
               onClick={() => { setLoginMode('sms'); setError('') }}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                loginMode === 'sms'
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${loginMode === 'sms'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
             >
               <MessageCircle className="w-4 h-4 inline mr-1.5" />
               短信验证码
@@ -260,11 +261,10 @@ export default function LoginPage() {
                     type="button"
                     onClick={handleSendSms}
                     disabled={smsCountdown > 0}
-                    className={`px-4 py-3.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                      smsCountdown > 0
+                    className={`px-4 py-3.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${smsCountdown > 0
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95'
-                    }`}
+                      }`}
                   >
                     {smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码'}
                   </button>
@@ -279,11 +279,10 @@ export default function LoginPage() {
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <div
                     onClick={() => setRememberMe(!rememberMe)}
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
-                      rememberMe
+                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${rememberMe
                         ? 'bg-indigo-500 border-indigo-500'
                         : 'border-gray-300 group-hover:border-indigo-300'
-                    }`}
+                      }`}
                   >
                     {rememberMe && (
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -293,13 +292,12 @@ export default function LoginPage() {
                   </div>
                   <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">记住我</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => alert('请联系客服重置密码（体验版）')}
+                <a
+                  href="/reset-password"
                   className="text-sm text-indigo-500 hover:text-indigo-600 font-medium transition-colors"
                 >
                   忘记密码？
-                </button>
+                </a>
               </div>
             )}
 
