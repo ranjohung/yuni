@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Navbar from '@/components/Navbar'
-import { Send, Mic, Smile, Paperclip, ArrowLeft } from 'lucide-react'
+import { Send, Mic, Smile, Paperclip, ArrowLeft, AlertTriangle, Zap } from 'lucide-react'
 
 interface Message {
   id: number
@@ -25,6 +25,8 @@ export default function ChatPage() {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [partner, setPartner] = useState<Partner | null>(null)
+  const [isDegraded, setIsDegraded] = useState(false)
+  const [modelName, setModelName] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -36,8 +38,22 @@ export default function ChatPage() {
 
     if (status === 'authenticated') {
       fetchMessages()
+      fetchLLMStatus()
     }
   }, [status])
+
+  const fetchLLMStatus = async () => {
+    try {
+      const response = await fetch('/api/llm/status')
+      const data = await response.json()
+      if (data.success) {
+        setIsDegraded(data.isDegraded)
+        setModelName(data.modelName)
+      }
+    } catch (err) {
+      console.error('Failed to fetch LLM status:', err)
+    }
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -127,9 +143,24 @@ export default function ChatPage() {
           <div>
             <h1 className="font-bold text-gray-800">{partner?.name || '伴侣'}</h1>
             <p className="text-xs text-green-500">在线</p>
+            {modelName && (
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                {modelName}
+              </p>
+            )}
           </div>
         </div>
       </div>
+
+      {isDegraded && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2">
+          <div className="max-w-lg mx-auto flex items-center gap-2 text-amber-700">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            <p className="text-xs">✨ 当前使用备用模型，对话体验可能略有不同</p>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col max-w-lg mx-auto w-full px-4 py-4 pb-24">
         <div className="flex-1 overflow-y-auto space-y-4 scrollbar-hide">

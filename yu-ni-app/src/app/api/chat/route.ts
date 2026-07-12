@@ -1,10 +1,11 @@
 import { authOptions } from '@/lib/authOptions'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
+import { chatWithLLM } from '@/lib/llmRouter'
+import type { ChatMessage } from '@/lib/llmConfig'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
-
   if (!session?.user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
   }
@@ -39,7 +40,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
-
   if (!session?.user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
   }
@@ -56,16 +56,18 @@ export async function POST(request: Request) {
     return new Response(JSON.stringify({ error: 'No active partner' }), { status: 400 })
   }
 
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) {
+    return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 })
+  }
+
   let chatSession = await prisma.chatSession.findFirst({
     where: { userId, partnerId: partner.id },
   })
 
   if (!chatSession) {
     chatSession = await prisma.chatSession.create({
-      data: {
-        userId,
-        partnerId: partner.id,
-      },
+      data: { userId, partnerId: partner.id },
     })
   }
 
@@ -77,12 +79,33 @@ export async function POST(request: Request) {
     },
   })
 
-  const replyContent = '我理解你的感受，这确实是一个需要认真思考的问题。让我们一起想想看...'
+  const recentMessages = await prisma.chatMessage.findMany({
+    where: { sessionId: chatSession.id },
+    orderBy: { createdAt: 'asc' },
+    take: 20,
+  })
+
+  const llmMessages: ChatMessage[] = recentMessages.map(msg => ({
+    role: msg.role === 'user' ? 'user' : 'assistant',
+    content: msg.content,
+  }))
+
+  const partnerPersonality = typeof partner.personality === 'string'
+    ? partner.personality
+    : JSON.stringify(partner.personality)
+
+  const llmResponse = await chatWithLLM(llmMessages, {
+    userId,
+    membershipType: user.membershipType,
+    partnerName: partner.name,
+    partnerPersonality,
+  })
+
   const assistantMessage = await prisma.chatMessage.create({
     data: {
       sessionId: chatSession.id,
       role: 'assistant',
-      content: replyContent,
+      content: llmResponse.content,
     },
   })
 
@@ -98,6 +121,11 @@ export async function POST(request: Request) {
       role: 'assistant' as const,
       content: assistantMessage.content,
       createdAt: assistantMessage.createdAt,
+    },
+    llmInfo: {
+      model: llmResponse.model,
+      isDegraded: llmResponse.isDegraded,
+      latency: llmResponse.latency,
     },
   }), { status: 201 })
 }
