@@ -1,0 +1,11 @@
+﻿python : Traceback (most recent call last):
+所在位置 行:1 字符: 1
++ python "F:\openclaw文件\与你\scripts\check_sentive.py" 2>&1 | Out-File -F ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "F:\openclaw文件\与你\scripts\check_sentive.py", line 3, in <module>
+    print(f'{kw}: {"\u2705" if kw in c else "\u274c"}')
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 6: illegal multibyte sequence

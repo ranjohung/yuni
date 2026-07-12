@@ -1,0 +1,26 @@
+﻿  ❌  场景: coffee
+  ❌  场景: social
+  ❌  场景: mock_interview
+  ❌  场景: meeting_report
+  ❌  场景: nvc_misunderstanding
+  ❌  场景: comfort_sad
+  ✅  用户端点: /register
+  ✅  用户端点: /login
+  ✅  用户端点: /trial
+  ❌  用户端点: /realname
+  ✅  用户端点: /profile
+  ❌  用户端点: /update
+  ✅  对话端点: /send
+  ✅  对话端点: /stream
+  ✅  对话端点: /history
+  ✅  路由注册: user
+  ✅  路由注册: partner
+  ✅  路由注册: chat
+  ✅  路由注册: scenario
+  ✅  路由注册: training
+  ✅  路由注册: growth
+  ✅  路由注册: talent
+  ✅  路由注册: membership
+  ✅  路由注册: compliance
+
+  ❌ dialogues目录不存在（场景对话数据在scenarios/index.js中）

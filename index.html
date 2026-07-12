@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>与你 - AI数字人社交模拟与陪伴成长平台</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .tab-active { color: #6366f1; border-bottom: 2px solid #6366f1; }
+    .tab-inactive { color: #94a3b8; }
+    .chat-bubble-user { background: linear-gradient(90deg, #6366f1, #8b5cf6); color: white; border-radius: 16px 16px 4px 16px; }
+    .chat-bubble-ai { background: white; color: #1e293b; border-radius: 16px 16px 16px 4px; border: 1px solid #e2e8f0; }
+    .progress-bar { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+    .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .animate-bounce-slow { animation: bounce 2s infinite; }
+    @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="app" class="flex flex-col h-screen max-w-md mx-auto bg-gray-50 shadow-lg">
+    <header class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 shrink-0" v-if="currentTab !== 'chat'">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">💫</span>
+          <span class="font-bold text-lg">与你</span>
+        </div>
+        <div class="text-sm opacity-90">{{ greeting }}</div>
+      </div>
+    </header>
+
+    <header class="bg-white shadow-sm px-4 py-3 shrink-0 z-10" v-else>
+      <div class="flex items-center gap-3">
+        <button @click="currentTab = 'home'" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <span class="text-lg">←</span>
+        </button>
+        <div class="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
+          <span class="text-xl">{{ partner.avatar }}</span>
+        </div>
+        <div>
+          <h1 class="font-bold text-gray-800">{{ partner.name }}</h1>
+          <p class="text-xs text-green-500">在线</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-auto p-4" v-if="currentTab === 'home'">
+      <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg mb-4">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-3xl">{{ partner.avatar }}</div>
+          <div class="flex-1">
+            <div class="font-semibold text-lg">{{ partner.name }}</div>
+            <div class="text-sm text-white/80">{{ partner.title }} · ❤️ Lv.{{ affectionLevel }}</div>
+          </div>
+        </div>
+        <div class="mt-6">
+          <div class="flex justify-between text-sm mb-2">
+            <span>好感度</span>
+            <span>{{ affection }}</span>
+          </div>
+          <div class="w-full bg-white/20 rounded-full h-3">
+            <div class="bg-white h-3 rounded-full transition-all duration-500" :style="{ width: (affection % 100) + '%' }"></div>
+          </div>
+        </div>
+        <div class="mt-6 flex gap-3">
+          <button @click="currentTab = 'chat'" class="flex-1 bg-white/20 hover:bg-white/30 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all">
+            <span>💝</span>互动
+          </button>
+          <button @click="currentTab = 'gifts'" class="flex-1 bg-white/20 hover:bg-white/30 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all">
+            <span>🎁</span>送礼物
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800">社交能力雷达</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-indigo-600 font-medium">{{ abilityAverage }}分</span>
+          </div>
+        </div>
+        <div class="h-48">
+          <canvas ref="radarChart"></canvas>
+        </div>
+        <div class="mt-4 grid grid-cols-5 gap-2">
+          <div class="text-center">
+            <p class="text-xs text-gray-500">同理心</p>
+            <p class="text-sm font-bold text-indigo-600">{{ abilityStats.empathy }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-gray-500">表达</p>
+            <p class="text-sm font-bold text-blue-600">{{ abilityStats.expression }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-gray-500">倾听</p>
+            <p class="text-sm font-bold text-green-600">{{ abilityStats.listening }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-gray-500">自信</p>
+            <p class="text-sm font-bold text-orange-600">{{ abilityStats.confidence }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-gray-500">策略</p>
+            <p class="text-sm font-bold text-purple-600">{{ abilityStats.strategy }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg mb-4 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
+        <div class="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full -ml-10 -mb-10"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-3">
+            <span>⭐</span>
+            <span class="text-sm text-white/80">变美联动</span>
+          </div>
+          <h3 class="text-xl font-bold mb-2">社交能力提升，魅力值+10%</h3>
+          <p class="text-white/80 text-sm mb-4">你的社交能力达到 {{ abilityAverage }} 分，魅力值同步提升！自信的你最闪耀 ✨</p>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <span>✨</span>
+              <span class="text-sm">魅力值：{{ Math.round(abilityAverage * 0.8) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span>🔥</span>
+              <span class="text-sm">自信度：{{ abilityStats.confidence }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span>⚡</span>
+            <h3 class="font-bold text-gray-800">本周训练进度</h3>
+          </div>
+          <span class="text-sm text-gray-500">{{ weeklyProgress.used }}/{{ weeklyProgress.total }} 天</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-3 mb-2">
+          <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-500" :style="{ width: weeklyProgress.percentage + '%' }"></div>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500">
+          <span>已完成 {{ weeklyProgress.percentage }}%</span>
+          <span v-if="weeklyProgress.percentage >= 100" class="text-green-600 font-medium">🏆 本周目标达成！</span>
+          <span v-else>还剩 {{ weeklyProgress.total - weeklyProgress.used }} 天</span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span>🎯</span>
+            <h3 class="font-bold text-gray-800">最近训练</h3>
+          </div>
+          <button @click="currentTab = 'training'" class="text-indigo-500 text-sm flex items-center gap-1">
+            查看全部
+            <span>→</span>
+          </button>
+        </div>
+        <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4">
+          <div v-for="record in recentTrainings" :key="record.id" 
+               @click="currentTab = 'training'"
+               class="flex-shrink-0 w-40 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-gray-400">{{ record.date }}</span>
+              <div :class="record.score >= 80 ? 'bg-green-100 text-green-600' : record.score >= 60 ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'"
+                   class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold">
+                {{ record.score }}
+              </div>
+            </div>
+            <h4 class="font-medium text-gray-800 text-sm mb-2 truncate">{{ record.sceneName }}</h4>
+            <div class="flex items-center justify-center gap-1 text-xs text-indigo-600">
+              <span>📈</span>
+              <span>{{ record.status === 1 ? '已完成' : '进行中' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="isEvening && goodnightPlan" class="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 rounded-2xl p-5 text-white shadow-lg mb-4">
+        <div class="flex items-center gap-2 mb-4">
+          <span>🌙</span>
+          <h3 class="text-lg font-bold">晚安计划</h3>
+          <span class="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">{{ goodnightPlan.mood }}</span>
+        </div>
+        <h4 class="text-xl font-bold mb-3">{{ goodnightPlan.title }}</h4>
+        <p class="text-white/80 mb-6">{{ goodnightPlan.content }}</p>
+        <div class="flex gap-3">
+          <button @click="currentTab = 'chat'" class="flex-1 bg-white/20 hover:bg-white/30 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+            <span>💬</span>聊聊心事
+          </button>
+          <button @click="currentTab = 'growth'" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+            <span>✨</span>睡前放松
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <button @click="currentTab = 'checkin'" :class="checkedInToday ? 'bg-green-100 text-green-500' : 'bg-white text-indigo-500'" class="rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
+          <div :class="checkedInToday ? 'bg-green-200 text-green-600' : 'bg-indigo-100 text-indigo-600'" class="w-12 h-12 rounded-full flex items-center justify-center">
+            <span>📅</span>
+          </div>
+          <span class="font-medium">{{ checkedInToday ? '已签到' : '签到' }}</span>
+          <span class="text-xs text-gray-500">连续 {{ checkinStreak }} 天</span>
+        </button>
+        <button @click="currentTab = 'chat'" class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
+          <div class="w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center">
+            <span>💬</span>
+          </div>
+          <span class="font-medium text-gray-800">聊天</span>
+          <span class="text-xs text-gray-500">{{ chatSession?.lastMessage || '暂无消息' }}</span>
+        </button>
+        <button @click="currentTab = 'training'" class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
+          <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+            <span>📈</span>
+          </div>
+          <span class="font-medium text-gray-800">训练</span>
+          <span class="text-xs text-gray-500">本周 {{ recentTrainings.length }} 次</span>
+        </button>
+        <button @click="currentTab = 'growth'" class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-2">
+          <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+            <span>✨</span>
+          </div>
+          <span class="font-medium text-gray-800">成长</span>
+          <span class="text-xs text-gray-500">查看报告</span>
+        </button>
+      </div>
+
+      <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-5 mt-4">
+        <h3 class="font-bold text-gray-800 mb-3">今日小贴士</h3>
+        <p class="text-gray-600 text-sm">倾听是沟通的基础。试着在对话中多听少说，理解对方的感受比表达自己更重要。</p>
+        <button @click="currentTab = 'growth'" class="mt-4 flex items-center gap-2 text-indigo-500 text-sm font-medium">
+          <span>💡</span>
+          <span>学习更多沟通技巧</span>
+        </button>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'partner'">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold text-gray-800">我的伴侣</h1>
+        <button @click="showCreatePartner = true" class="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all">
+          <span>+</span> 添加
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div v-for="p in partners" :key="p.id"
+             :class="selectedPartner?.id === p.id ? 'bg-white rounded-2xl shadow-sm p-4 transition-all ring-2 ring-indigo-500 cursor-pointer' : 'bg-white rounded-2xl shadow-sm p-4 transition-all hover:shadow-md cursor-pointer'"
+             @click="selectedPartner = p">
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-3xl">
+                {{ p.avatar }}
+              </div>
+              <div v-if="p.isActive" class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <span class="text-white text-xs">✓</span>
+              </div>
+            </div>
+
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-gray-800">{{ p.name }}</h3>
+                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-xs rounded-full">{{ getCoreTypeLabel(p.coreType) }}</span>
+              </div>
+              <p class="text-sm text-gray-500 mt-1">
+                已解锁 {{ getRevealedPreferences(p.preferences).length }} 个喜好
+                <span v-if="getUnrevealedCount(p.preferences) > 0">，还有 {{ getUnrevealedCount(p.preferences) }} 个待发现</span>
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button @click.stop="currentTab = 'chat'" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <span class="text-gray-600 text-lg">💬</span>
+              </button>
+              <button v-if="partners.length > 1" @click.stop="deletePartner(p.id)" class="p-2 hover:bg-red-50 rounded-full transition-colors">
+                <span class="text-gray-400 hover:text-red-500 text-lg">🗑️</span>
+              </button>
+            </div>
+          </div>
+
+          <div v-if="selectedPartner?.id === p.id" class="mt-4 pt-4 border-t border-gray-100">
+            <div class="grid grid-cols-4 gap-3 mb-4">
+              <button @click.stop="switchPartner(p.id)" class="flex flex-col items-center gap-1 p-2 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors">
+                <span class="text-indigo-500 text-lg">✓</span>
+                <span class="text-xs text-gray-600">设为当前</span>
+              </button>
+              <button @click.stop="currentTab = 'chat'" class="flex flex-col items-center gap-1 p-2 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
+                <span class="text-purple-500 text-lg">💬</span>
+                <span class="text-xs text-gray-600">发消息</span>
+              </button>
+              <button @click.stop="currentTab = 'gifts'" class="flex flex-col items-center gap-1 p-2 bg-pink-50 rounded-xl hover:bg-pink-100 transition-colors">
+                <span class="text-pink-500 text-lg">🎁</span>
+                <span class="text-xs text-gray-600">送礼物</span>
+              </button>
+              <button @click.stop="showPartnerSettings = true" class="flex flex-col items-center gap-1 p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <span class="text-gray-500 text-lg">⚙️</span>
+                <span class="text-xs text-gray-600">设置</span>
+              </button>
+            </div>
+
+            <div v-if="getRevealedPreferences(p.preferences).length > 0">
+              <p class="text-sm font-medium text-gray-700 mb-2">已发现的喜好</p>
+              <div class="flex flex-wrap gap-2">
+                <span v-for="(pref, idx) in getRevealedPreferences(p.preferences)" :key="idx" class="px-3 py-1 bg-green-50 text-green-600 text-xs rounded-full flex items-center gap-1">
+                  <span>❤️</span>
+                  {{ pref.preferenceDetail }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="partners.length === 0" class="text-center py-16">
+        <div class="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+          <span class="text-4xl">❤️</span>
+        </div>
+        <p class="text-gray-500 mb-4">还没有伴侣</p>
+        <button @click="showCreatePartner = true" class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center gap-2 mx-auto">
+          <span>+</span> 创建第一个伴侣
+        </button>
+      </div>
+
+      <div class="mt-8">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-gray-800">伴侣小贴士</h2>
+          <span class="text-gray-400">→</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4">
+            <span class="text-2xl mb-2">❤️</span>
+            <p class="text-sm font-medium text-gray-700">提升好感度</p>
+            <p class="text-xs text-gray-500 mt-1">经常聊天和送礼物可以增加好感度</p>
+          </div>
+          <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+            <span class="text-2xl mb-2">🎁</span>
+            <p class="text-sm font-medium text-gray-700">发现喜好</p>
+            <p class="text-xs text-gray-500 mt-1">了解伴侣的喜好能送出更贴心的礼物</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'training'">
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full flex items-center justify-center">
+            <span class="text-xl">👥</span>
+          </div>
+          <div>
+            <h2 class="font-bold text-gray-800">社交场景训练</h2>
+            <p class="text-gray-500 text-sm">提升你的社交能力</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="bg-indigo-50 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-indigo-500">{{ trainingHistory.length }}</p>
+            <p class="text-gray-500 text-sm">累计训练</p>
+          </div>
+          <div class="bg-purple-50 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-purple-500">{{ trainingScenes.filter(s => s.completed).length }}/{{ trainingScenes.length }}</p>
+            <p class="text-gray-500 text-sm">完成进度</p>
+          </div>
+          <div class="bg-green-50 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-green-500">{{ achievements.filter(a => a.unlocked).length }}</p>
+            <p class="text-gray-500 text-sm">获得徽章</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+        <h3 class="font-bold text-gray-800 mb-3">场景分类</h3>
+        <div class="flex justify-around">
+          <button v-for="cat in trainingCategories" :key="cat.id"
+                  @click="currentCategory = cat.id"
+                  :class="currentCategory === cat.id ? cat.color + ' ring-2 ring-offset-1 ring-gray-200' : 'bg-gray-100 text-gray-600'"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-full whitespace-nowrap transition-all">
+            <span class="text-sm">{{ cat.icon }}</span>
+            <span class="text-xs font-medium">{{ cat.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800">场景列表</h3>
+          <span class="text-xs text-gray-400">{{ filteredScenes.length }} 个场景</span>
+        </div>
+        <div class="space-y-3">
+          <div v-for="scene in filteredScenes" :key="scene.id"
+               @click="startTraining(scene.id)"
+               :class="scene.unlocked ? 'bg-white border border-gray-200 hover:border-indigo-300 hover:shadow-md cursor-pointer' : 'bg-gray-100 opacity-60'"
+               class="relative rounded-xl p-4 transition-all">
+            <div v-if="!scene.unlocked" class="absolute top-4 right-4">
+              <span class="text-gray-400">🔒</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <div :class="scene.completed ? 'bg-green-100 text-green-500' : scene.unlocked ? 'bg-indigo-100 text-indigo-500' : 'bg-gray-200 text-gray-400'"
+                   class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
+                <span v-if="scene.completed">🏆</span>
+                <span v-else>{{ scene.icon }}</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-medium text-gray-800">{{ scene.name }}</h4>
+                <p class="text-gray-500 text-sm mt-1">{{ scene.description }}</p>
+                <div class="flex items-center gap-3 mt-2">
+                  <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">难度 {{ scene.difficulty }}星</span>
+                  <span class="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full flex items-center gap-1">⏱️ {{ scene.time }}</span>
+                  <span class="text-xs px-2 py-1 bg-pink-50 text-pink-600 rounded-full flex items-center gap-1">❤️ {{ scene.reward }}</span>
+                </div>
+              </div>
+              <span v-if="!scene.unlocked" class="text-xs text-gray-400 mt-1">需要好感度 {{ scene.unlockAffection }}</span>
+              <span v-else class="text-gray-400">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800">训练记录</h3>
+          <span class="text-xs text-indigo-500">查看全部</span>
+        </div>
+        <div class="space-y-3">
+          <div v-for="record in trainingHistory.slice(0, 3)" :key="record.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div>
+              <p class="font-medium text-gray-800 text-sm">{{ record.sceneName }}</p>
+              <p class="text-xs text-gray-400">{{ record.date }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span :class="record.score >= 80 ? 'text-green-500' : record.score >= 60 ? 'text-yellow-500' : 'text-red-500'" class="font-bold text-sm">{{ record.score }}分</span>
+              <span class="text-xs text-pink-500">+{{ record.affectionGain }} ❤️</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800">成就徽章</h3>
+          <span class="text-xs text-indigo-500">查看全部</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div v-for="achievement in achievements" :key="achievement.id"
+               :class="achievement.unlocked ? 'bg-white border border-gray-200' : 'bg-gray-100 opacity-50'"
+               class="rounded-xl p-3 text-center">
+            <div :class="achievement.unlocked ? 'text-3xl' : 'text-3xl grayscale'" class="mb-2">{{ achievement.icon }}</div>
+            <p class="font-medium text-gray-800 text-xs">{{ achievement.name }}</p>
+            <p v-if="achievement.unlocked" class="text-xs text-green-500 mt-1">{{ achievement.date }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl p-5">
+        <h3 class="font-bold text-gray-800 mb-3">训练小贴士</h3>
+        <p class="text-gray-600 text-sm">每个场景都是一次成长的机会。不要担心失败，每次尝试都会让你变得更好。完成训练可以获得好感度奖励，解锁更多场景！</p>
+      </div>
+
+      <div v-if="currentTraining" class="fixed inset-0 bg-black/50 flex items-end z-50">
+        <div class="bg-white w-full max-w-md rounded-t-2xl h-[70vh] flex flex-col">
+          <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 flex items-center justify-between">
+            <div>{{ currentTraining.title }}</div>
+            <button @click="currentTraining = null">✕</button>
+          </div>
+          <div class="flex-1 p-4 space-y-4 overflow-auto">
+            <div v-for="(msg, index) in trainingMessages" :key="index" class="flex" :class="msg.type === 'ai' ? 'justify-start' : 'justify-end'">
+              <div :class="msg.type === 'ai' ? 'chat-bubble-ai' : 'chat-bubble-user'" class="max-w-[80%] p-3">
+                <div class="text-sm">{{ msg.content }}</div>
+                <div v-if="msg.quality" class="text-xs mt-1" :class="msg.quality === 'good' ? 'text-green-600' : msg.quality === 'safe' ? 'text-blue-600' : 'text-red-500'">
+                  {{ msg.quality === 'good' ? '✨ 高质量' : msg.quality === 'safe' ? '👍 安全' : '💔 冷场' }}
+                </div>
+              </div>
+            </div>
+            <div v-if="isTyping" class="flex justify-start">
+              <div class="chat-bubble-ai p-4">
+                <div class="flex gap-1">
+                  <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                  <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                  <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="!isTyping && currentRound < currentTraining.rounds.length" class="p-4 border-t border-gray-200">
+            <div v-for="(option, idx) in currentTraining.rounds[currentRound].options" :key="idx"
+                 @click="selectOption(option)"
+                 class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left hover:border-indigo-400 hover:bg-indigo-50 mb-2">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-medium">{{ ['A', 'B', 'C'][idx] }}</span>
+                <span class="text-sm text-gray-700">{{ option.text }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="trainingFinished" class="p-4 border-t border-gray-200 text-center">
+            <div class="text-4xl mb-2">🎉</div>
+            <div class="font-bold text-gray-800">训练完成！</div>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+              <div class="bg-indigo-50 rounded-lg p-3 text-center">
+                <div class="text-2xl font-bold text-indigo-600">{{ trainingScore }}</div>
+                <div class="text-xs text-gray-500">综合得分</div>
+              </div>
+              <div class="bg-green-50 rounded-lg p-3 text-center">
+                <div class="text-2xl font-bold text-green-600">+{{ affectionGain }}</div>
+                <div class="text-xs text-gray-500">好感度提升</div>
+              </div>
+            </div>
+            <button @click="finishTraining" class="mt-4 w-full bg-indigo-500 text-white py-3 rounded-xl font-semibold">返回训练列表</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'growth'">
+      <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg mb-4">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <span class="text-xl">📈</span>
+          </div>
+          <div>
+            <h2 class="font-bold text-lg">成长报告</h2>
+            <p class="text-white/80 text-sm">追踪你的进步轨迹</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white/10 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span>🎯</span>
+              <span class="text-sm">累计训练</span>
+            </div>
+            <p class="text-2xl font-bold">15次</p>
+          </div>
+          <div class="bg-white/10 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span>⭐</span>
+              <span class="text-sm">平均得分</span>
+            </div>
+            <p class="text-2xl font-bold">75分</p>
+          </div>
+          <div class="bg-white/10 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span>✅</span>
+              <span class="text-sm">完成率</span>
+            </div>
+            <p class="text-2xl font-bold">60%</p>
+          </div>
+          <div class="bg-white/10 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span>📅</span>
+              <span class="text-sm">连续训练</span>
+            </div>
+            <p class="text-2xl font-bold">7天</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800">能力雷达</h3>
+          <span class="text-xs text-gray-400">综合评分 73</span>
+        </div>
+        <div class="flex items-center justify-around">
+          <div class="flex flex-col items-center gap-2" v-for="(item, index) in abilityStats" :key="index">
+            <div class="relative w-12 h-12">
+              <svg class="w-full h-full transform -rotate-90">
+                <circle cx="24" cy="24" r="20" stroke="#f3f4f6" stroke-width="8" fill="none" />
+                <circle
+                  cx="24" cy="24" r="20"
+                  :stroke="item.value >= 80 ? '#10b981' : item.value >= 60 ? '#f59e0b' : '#ef4444'"
+                  stroke-width="8" fill="none"
+                  stroke-linecap="round"
+                  :stroke-dasharray="(item.value / 100) * 126 + ' 126'"
+                />
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-700">
+                {{ item.value }}
+              </span>
+            </div>
+            <span class="text-xs text-gray-500">{{ item.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800">成长里程碑</h3>
+          <span class="text-xs text-indigo-500">查看全部 →</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div v-for="milestone in growthMilestones" :key="milestone.id"
+               :class="milestone.unlocked ? 'bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200' : 'bg-gray-50 opacity-60'"
+               class="rounded-xl p-3 text-center">
+            <div :class="!milestone.unlocked ? 'grayscale' : ''" class="text-2xl mb-2">{{ milestone.icon }}</div>
+            <p class="font-medium text-gray-800 text-xs">{{ milestone.name }}</p>
+            <p v-if="milestone.unlocked" class="text-xs text-green-500 mt-1">{{ milestone.unlockedAt }}</p>
+            <p v-else class="text-xs text-gray-400 mt-1">{{ milestone.target }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800">学习课程</h3>
+          <span class="text-xs text-indigo-500">更多课程 →</span>
+        </div>
+        <div class="space-y-3">
+          <div v-for="course in learningCourses" :key="course.id" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+            <div :class="course.progress === 100 ? 'bg-green-100 text-green-500' : course.progress > 0 ? 'bg-indigo-100 text-indigo-500' : 'bg-gray-200 text-gray-400'"
+                 class="w-12 h-12 rounded-xl flex items-center justify-center text-xl">
+              {{ course.icon }}
+            </div>
+            <div class="flex-1">
+              <h4 class="font-medium text-gray-800">{{ course.title }}</h4>
+              <p class="text-gray-500 text-sm">{{ course.description }}</p>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="text-xs text-gray-400">⏱️ {{ course.duration }}</span>
+                <span :class="course.progress === 100 ? 'bg-green-100 text-green-600' : course.progress > 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'"
+                      class="text-xs px-2 py-0.5 rounded-full">
+                  {{ course.level }}
+                </span>
+              </div>
+            </div>
+            <div v-if="course.progress > 0 && course.progress < 100" class="w-20">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all" :style="{ width: course.progress + '%' }"></div>
+              </div>
+              <p class="text-xs text-gray-400 mt-1 text-right">{{ course.progress }}%</p>
+            </div>
+            <span v-if="course.progress === 100" class="text-green-500">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <button class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-3 text-left">
+          <div class="w-12 h-12 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center">
+            <span>🧠</span>
+          </div>
+          <span class="font-medium text-gray-800">CBT思维记录</span>
+          <span class="text-gray-500 text-sm">记录思维模式</span>
+          <span class="text-gray-400 text-sm self-end">→</span>
+        </button>
+        <button class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center gap-3 text-left">
+          <div class="w-12 h-12 bg-green-100 text-green-500 rounded-full flex items-center justify-center">
+            <span>❤️</span>
+          </div>
+          <span class="font-medium text-gray-800">NVC沟通训练</span>
+          <span class="text-gray-500 text-sm">非暴力沟通</span>
+          <span class="text-gray-400 text-sm self-end">→</span>
+        </button>
+      </div>
+
+      <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-5">
+        <h3 class="font-bold text-gray-800 mb-3">💡 成长小贴士</h3>
+        <p class="text-gray-600 text-sm">每天坚持训练10分钟，你的社交能力会稳步提升。完成课程和训练可以获得积分奖励，解锁更多高级功能！</p>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'profile'">
+      <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg mb-4">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+              <span class="text-3xl">😊</span>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-indigo-500"></div>
+          </div>
+          <div class="flex-1">
+            <h2 class="text-xl font-bold">{{ user.nickname }}</h2>
+            <p class="text-white/80 text-sm">Lv.1 · 免费版</p>
+          </div>
+          <button class="text-sm bg-white/20 px-3 py-1 rounded-full hover:bg-white/30 transition-colors">编辑资料</button>
+        </div>
+
+        <div class="mt-6 grid grid-cols-4 gap-3">
+          <div class="text-center">
+            <div class="flex items-center justify-center gap-1">
+              <span>❤️</span>
+              <span class="text-xl font-bold">{{ affection }}</span>
+            </div>
+            <p class="text-white/60 text-xs mt-1">好感度</p>
+          </div>
+          <div class="text-center">
+            <div class="flex items-center justify-center gap-1">
+              <span>💎</span>
+              <span class="text-xl font-bold">{{ user.points }}</span>
+            </div>
+            <p class="text-white/60 text-xs mt-1">积分</p>
+          </div>
+          <div class="text-center">
+            <div class="flex items-center justify-center gap-1">
+              <span>📅</span>
+              <span class="text-xl font-bold">{{ checkinStreak }}</span>
+            </div>
+            <p class="text-white/60 text-xs mt-1">连续签到</p>
+          </div>
+          <div class="text-center">
+            <div class="flex items-center justify-center gap-1">
+              <span>🏆</span>
+              <span class="text-xl font-bold">4</span>
+            </div>
+            <p class="text-white/60 text-xs mt-1">徽章</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-3 mb-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+          <div class="w-10 h-10 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-2">
+            <span>🎯</span>
+          </div>
+          <p class="font-bold text-gray-800">15</p>
+          <p class="text-gray-500 text-xs">训练次数</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+          <div class="w-10 h-10 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
+            <span>🏆</span>
+          </div>
+          <p class="font-bold text-gray-800">4</p>
+          <p class="text-gray-500 text-xs">获得徽章</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+          <div class="w-10 h-10 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+            <span>👥</span>
+          </div>
+          <p class="font-bold text-gray-800">8</p>
+          <p class="text-gray-500 text-xs">好友</p>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+          <div class="w-10 h-10 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+            <span>📚</span>
+          </div>
+          <p class="font-bold text-gray-800">2</p>
+          <p class="text-gray-500 text-xs">完成课程</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4" v-if="partner">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span>❤️</span>
+            <h3 class="font-bold text-gray-800">我的伴侣</h3>
+          </div>
+          <span class="text-gray-400">→</span>
+        </div>
+        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+          <div class="w-14 h-14 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
+            <span class="text-2xl">{{ partner.avatar }}</span>
+          </div>
+          <div class="flex-1">
+            <h4 class="font-bold text-gray-800">{{ partner.name }}</h4>
+            <p class="text-gray-500 text-sm">类型：{{ partner.coreType }}</p>
+            <p class="text-gray-500 text-sm">好感度等级：{{ affectionLevel }}</p>
+          </div>
+          <div class="w-20">
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-600" :style="{ width: affection + '%' }"></div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 text-right">{{ affection }}/1000</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-5 border border-yellow-200 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span>⚡</span>
+            <h3 class="font-bold text-gray-800">升级会员</h3>
+          </div>
+          <span class="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">限时优惠</span>
+        </div>
+        <p class="text-gray-600 text-sm mb-4">解锁全部功能，享受更好的训练体验</p>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <div class="flex items-center gap-2 text-sm">
+            <span>🎯</span>
+            <div>
+              <p class="font-medium text-gray-800 text-xs">无限训练</p>
+              <p class="text-gray-500 text-xs">解锁全部训练场景</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-sm">
+            <span>💎</span>
+            <div>
+              <p class="font-medium text-gray-800 text-xs">双倍积分</p>
+              <p class="text-gray-500 text-xs">每次训练获得双倍积分</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-sm">
+            <span>📚</span>
+            <div>
+              <p class="font-medium text-gray-800 text-xs">专属课程</p>
+              <p class="text-gray-500 text-xs">会员专属学习内容</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-sm">
+            <span>💝</span>
+            <div>
+              <p class="font-medium text-gray-800 text-xs">优先体验</p>
+              <p class="text-gray-500 text-xs">新功能优先使用</p>
+            </div>
+          </div>
+        </div>
+        <button class="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity">立即升级</button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="space-y-2">
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center">
+              <span>👤</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">个人资料</span>
+            <span class="text-gray-400">→</span>
+          </div>
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-green-100 text-green-500 rounded-full flex items-center justify-center">
+              <span>🔔</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">通知设置</span>
+            <span class="text-gray-400">→</span>
+          </div>
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center">
+              <span>⚙️</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">账号设置</span>
+            <span class="text-gray-400">→</span>
+          </div>
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center">
+              <span>❓</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">帮助与反馈</span>
+            <span class="text-gray-400">→</span>
+          </div>
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-green-100 text-green-500 rounded-full flex items-center justify-center">
+              <span>👥</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">邀请好友</span>
+            <span class="text-gray-400">→</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
+        <div class="space-y-2">
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-red-100 text-red-500 rounded-full flex items-center justify-center">
+              <span>🛡️</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">隐私设置</span>
+            <span class="text-gray-400">→</span>
+          </div>
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center">
+              <span>🗄️</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">数据管理</span>
+            <span class="text-gray-400">→</span>
+          </div>
+          <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
+            <div class="w-10 h-10 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center">
+              <span>ℹ️</span>
+            </div>
+            <span class="flex-1 text-left font-medium text-gray-800">关于我们</span>
+            <span class="text-gray-400">→</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all font-medium mb-4">
+        <span>🚪</span>
+        <span>退出登录</span>
+      </button>
+
+      <div class="text-center text-gray-400 text-xs">
+        <p>版本 v1.0.0</p>
+        <p class="mt-1">与你 · 让社交更简单</p>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'chat'">
+      <div class="flex-1 overflow-y-auto space-y-4">
+        <div v-for="(msg, index) in chatMessages" :key="index" class="flex" :class="msg.type === 'ai' ? 'justify-start' : 'justify-end'">
+          <div :class="msg.type === 'ai' ? 'chat-bubble-ai' : 'chat-bubble-user'" class="max-w-[80%] p-3">
+            <div class="text-sm">{{ msg.content }}</div>
+            <div class="text-xs mt-1" :class="msg.type === 'ai' ? 'text-gray-400' : 'text-white/60'">
+              {{ msg.time }}
+            </div>
+          </div>
+        </div>
+        <div v-if="isTyping" class="flex justify-start">
+          <div class="chat-bubble-ai p-4">
+            <div class="flex gap-1">
+              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: '0ms'"></div>
+              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: '150ms'"></div>
+              <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: '300ms'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 bg-white rounded-2xl shadow-lg p-3">
+        <div class="flex items-center gap-3">
+          <button class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all">
+            <span>📎</span>
+          </button>
+          <button class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all">
+            <span>😊</span>
+          </button>
+          <input v-model="chatInput" @keyup.enter="sendChat" placeholder="输入消息..." class="flex-1 px-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+          <button class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all">
+            <span>🎤</span>
+          </button>
+          <button @click="sendChat" :disabled="!chatInput.trim() || isTyping" class="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <span>➤</span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'checkin'">
+      <div class="text-center py-8 mb-6">
+        <div :class="checkedInToday ? 'bg-green-100 text-green-500' : 'bg-indigo-100 text-indigo-500'" class="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-5xl">{{ checkedInToday ? '✅' : '📅' }}</span>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ checkedInToday ? '今日已签到' : '每日签到' }}</h2>
+        <p class="text-gray-500">连续签到 {{ checkinStreak }} 天</p>
+      </div>
+
+      <button v-if="!checkedInToday" @click="doCheckin" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all">
+        立即签到
+      </button>
+
+      <div class="mt-6 bg-white rounded-2xl shadow-sm p-5">
+        <h3 class="font-bold text-gray-800 mb-4">签到奖励</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">❤️</span>
+              <span class="text-sm text-gray-700">好感度 +5</span>
+            </div>
+            <span class="text-xs text-green-500">已解锁</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">⭐</span>
+              <span class="text-sm text-gray-700">连续签到7天获得成就徽章</span>
+            </div>
+            <span class="text-xs text-gray-400">进行中</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🎁</span>
+              <span class="text-sm text-gray-700">连续签到30天获得专属礼物</span>
+            </div>
+            <span class="text-xs text-gray-400">未解锁</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-5">
+        <h3 class="font-bold text-gray-800 mb-3">签到小贴士</h3>
+        <p class="text-gray-600 text-sm">每天签到可以提升与伴侣的亲密度，连续签到还有额外奖励哦！</p>
+      </div>
+    </main>
+
+    <main class="flex-1 overflow-auto p-4" v-else-if="currentTab === 'gifts'">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-800">送礼物</h2>
+        <div class="flex items-center gap-2">
+          <span class="text-xl">💎</span>
+          <span class="font-medium text-gray-700">{{ giftCoins }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div v-for="gift in gifts" :key="gift.id"
+             :class="giftCoins >= gift.price ? 'bg-white border-2 border-transparent hover:border-indigo-300 hover:shadow-md cursor-pointer' : 'bg-gray-100 opacity-60'"
+             class="rounded-2xl p-4 transition-all">
+          <div class="text-center">
+            <div class="text-4xl mb-2">{{ gift.avatar }}</div>
+            <h4 class="font-medium text-gray-800">{{ gift.name }}</h4>
+            <p class="text-sm text-gray-500">{{ gift.description }}</p>
+            <div class="mt-3 flex items-center justify-center gap-1">
+              <span class="text-sm">💎</span>
+              <span class="font-bold text-indigo-600">{{ gift.price }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5">
+        <h3 class="font-bold text-gray-800 mb-4">送礼记录</h3>
+        <div v-if="giftHistory.length > 0" class="space-y-3">
+          <div v-for="record in giftHistory" :key="record.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">{{ record.giftAvatar }}</span>
+              <div>
+                <p class="font-medium text-gray-800 text-sm">{{ record.giftName }}</p>
+                <p class="text-gray-500 text-xs">{{ record.date }}</p>
+              </div>
+            </div>
+            <span class="text-sm text-red-500">+{{ record.affectionGain }} ❤️</span>
+          </div>
+        </div>
+        <div v-else class="text-center py-6 text-gray-500">
+          <span class="text-4xl mb-2">🎁</span>
+          <p>暂无送礼记录</p>
+          <p class="text-sm mt-1">送礼物可以快速提升亲密度哦</p>
+        </div>
+      </div>
+    </main>
+
+    <nav class="bg-white border-t border-gray-200 flex justify-around items-center py-2 shrink-0" v-if="currentTab !== 'chat'">
+      <button @click="currentTab = 'home'" :class="currentTab === 'home' ? 'tab-active' : 'tab-inactive'" class="flex flex-col items-center py-2 px-4">
+        <span class="text-xl mb-1">🏠</span>
+        <span class="text-xs">首页</span>
+      </button>
+      <button @click="currentTab = 'partner'" :class="currentTab === 'partner' ? 'tab-active' : 'tab-inactive'" class="flex flex-col items-center py-2 px-4">
+        <span class="text-xl mb-1">💑</span>
+        <span class="text-xs">伴侣</span>
+      </button>
+      <button @click="currentTab = 'training'" :class="currentTab === 'training' ? 'tab-active' : 'tab-inactive'" class="flex flex-col items-center py-2 px-4">
+        <span class="text-xl mb-1">🎯</span>
+        <span class="text-xs">模拟</span>
+      </button>
+      <button @click="currentTab = 'growth'" :class="currentTab === 'growth' ? 'tab-active' : 'tab-inactive'" class="flex flex-col items-center py-2 px-4">
+        <span class="text-xl mb-1">📈</span>
+        <span class="text-xs">成长</span>
+      </button>
+      <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'tab-active' : 'tab-inactive'" class="flex flex-col items-center py-2 px-4">
+        <span class="text-xl mb-1">👤</span>
+        <span class="text-xs">我的</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue
+
+    createApp({
+      setup() {
+        const currentTab = ref('home')
+        const partners = ref([
+          {
+            id: 1,
+            name: '沈清欢',
+            avatar: '🌸',
+            title: '青梅竹马',
+            occupation: '建筑设计师',
+            coreType: 'empathetic',
+            personality: '温柔体贴',
+            isActive: true,
+            moments: '今天路过一家花店，闻到栀子花的香味...',
+            preferences: [
+              { preferenceType: 'hobby', preferenceDetail: '喜欢花艺', revealed: true },
+              { preferenceType: 'food', preferenceDetail: '喜欢甜点', revealed: true },
+              { preferenceType: 'music', preferenceDetail: '喜欢轻音乐', revealed: false },
+              { preferenceType: 'movie', preferenceDetail: '喜欢文艺片', revealed: false },
+            ],
+            createdAt: '2026-01-15'
+          },
+          {
+            id: 2,
+            name: '陈星远',
+            avatar: '⭐',
+            title: '好友',
+            occupation: '程序员',
+            coreType: 'supportive',
+            personality: '稳重可靠',
+            isActive: false,
+            moments: '今天写了一段优雅的代码~',
+            preferences: [
+              { preferenceType: 'hobby', preferenceDetail: '喜欢编程', revealed: true },
+              { preferenceType: 'game', preferenceDetail: '喜欢策略游戏', revealed: true },
+              { preferenceType: 'book', preferenceDetail: '喜欢科幻小说', revealed: false },
+            ],
+            createdAt: '2026-02-20'
+          },
+          {
+            id: 3,
+            name: '林晓语',
+            avatar: '🎨',
+            title: '新朋友',
+            occupation: '插画师',
+            coreType: 'playful',
+            personality: '活泼开朗',
+            isActive: false,
+            moments: '今天画了一幅漂亮的画！',
+            preferences: [
+              { preferenceType: 'hobby', preferenceDetail: '喜欢画画', revealed: true },
+              { preferenceType: 'travel', preferenceDetail: '喜欢旅行', revealed: false },
+              { preferenceType: 'art', preferenceDetail: '喜欢艺术展览', revealed: false },
+            ],
+            createdAt: '2026-03-10'
+          }
+        ])
+        const selectedPartner = ref(partners.value.find(p => p.isActive) || partners.value[0] || null)
+        const showCreatePartner = ref(false)
+        const showPartnerSettings = ref(false)
+        
+        const CORE_TYPE_LABELS = {
+          empathetic: '共情型',
+          supportive: '支持型',
+          playful: '活泼型',
+          wisdom: '智慧型',
+          ISTJ: '实干家',
+          ISFJ: '守护者',
+          INFJ: '倡导者',
+          INTJ: '建筑师',
+        }
+
+        const user = ref({ nickname: '小雨', points: 1280 })
+        const affection = ref(parseInt(localStorage.getItem('affection') || '65'))
+        const checkedInToday = ref(localStorage.getItem('lastCheckin') === new Date().toDateString())
+        const checkinStreak = ref(parseInt(localStorage.getItem('checkinStreak') || '3'))
+
+        const abilityStats = ref([
+          { label: '沟通', value: 75 },
+          { label: '共情', value: 82 },
+          { label: '自信', value: 68 },
+          { label: '倾听', value: 78 },
+          { label: '表达', value: 72 },
+          { label: '应变', value: 65 },
+        ])
+
+        const growthMilestones = ref([
+          { id: 1, name: '初次训练', icon: '🌟', description: '完成第一次社交训练', unlocked: true, unlockedAt: '7月4日', target: '完成1次训练' },
+          { id: 2, name: '坚持不懈', icon: '🔥', description: '连续训练7天', unlocked: true, unlockedAt: '7月10日', target: '连续7天训练' },
+          { id: 3, name: '社交达人', icon: '👑', description: '累计训练30次', unlocked: false, target: '完成30次训练' },
+          { id: 4, name: '完美表现', icon: '💎', description: '获得一次满分', unlocked: false, target: '训练得100分' },
+          { id: 5, name: '全能选手', icon: '🏆', description: '完成所有场景训练', unlocked: false, target: '完成所有场景' },
+          { id: 6, name: '沟通大师', icon: '🎖️', description: '所有能力值达到80', unlocked: false, target: '能力值均达80' },
+        ])
+
+        const learningCourses = ref([
+          { id: 1, title: '破冰技巧入门', description: '学习如何开启一段对话', icon: '☕', duration: '20分钟', progress: 100, level: '已完成' },
+          { id: 2, title: '非暴力沟通基础', description: '观察、感受、需要、请求', icon: '❤️', duration: '35分钟', progress: 60, level: '学习中' },
+          { id: 3, title: '自信表达训练', description: '提升公众演讲能力', icon: '🎤', duration: '40分钟', progress: 0, level: '未开始' },
+          { id: 4, title: '情绪管理技巧', description: '学会控制和调节情绪', icon: '🧘', duration: '30分钟', progress: 0, level: '未开始' },
+        ])
+        const weeklyProgress = ref({ used: 3, total: 7, percentage: Math.round((3 / 7) * 100) })
+        const recentTrainings = ref([
+          { id: 1, sceneName: '咖啡厅破冰', score: 85, status: 1, date: '7月8日' },
+          { id: 2, sceneName: '兴趣社群自我介绍', score: 72, status: 1, date: '7月7日' },
+          { id: 3, sceneName: '咖啡厅破冰', score: 68, status: 1, date: '7月6日' },
+          { id: 4, sceneName: '兴趣社群自我介绍', score: 90, status: 1, date: '7月5日' },
+        ])
+        const chatSession = ref({ lastMessage: '暂无消息' })
+
+        const isEvening = computed(() => new Date().getHours() >= 19)
+        const goodnightPlan = computed(() => {
+          if (!isEvening.value) return null
+          const score = affection.value
+          if (score >= 80) return { title: '甜蜜晚安', content: '今晚想和你一起看星星，聊聊今天发生的趣事...', mood: '开心' }
+          if (score >= 50) return { title: '温馨陪伴', content: '今天辛苦了，好好休息吧，明天又是新的一天', mood: '温柔' }
+          return { title: '晚安问候', content: '夜深了，早点休息，晚安', mood: '平静' }
+        })
+        const abilityAverage = computed(() => {
+          const s = abilityStats.value
+          return Math.round(s.reduce((sum, item) => sum + item.value, 0) / s.length)
+        })
+        const affectionLevel = computed(() => {
+          if (affection.value >= 600) return 4
+          if (affection.value >= 400) return 3
+          if (affection.value >= 200) return 2
+          if (affection.value >= 1) return 1
+          return 0
+        })
+        const greeting = computed(() => {
+          const hour = new Date().getHours()
+          if (hour < 12) return '早上好 ☀️'
+          if (hour < 18) return '下午好 ☁️'
+          return '晚上好 🌙'
+        })
+
+        const getCoreTypeLabel = (type) => {
+          return CORE_TYPE_LABELS[type] || type
+        }
+
+        const getRevealedPreferences = (prefs) => {
+          return prefs.filter(p => p.revealed)
+        }
+
+        const getUnrevealedCount = (prefs) => {
+          return prefs.filter(p => !p.revealed).length
+        }
+
+        const switchPartner = (partnerId) => {
+          partners.value.forEach(p => {
+            p.isActive = p.id === partnerId
+          })
+          selectedPartner.value = partners.value.find(p => p.id === partnerId)
+        }
+
+        const deletePartner = (partnerId) => {
+          if (partners.value.length <= 1) return
+          const idx = partners.value.findIndex(p => p.id === partnerId)
+          if (idx !== -1) {
+            partners.value.splice(idx, 1)
+            if (selectedPartner.value?.id === partnerId) {
+              selectedPartner.value = partners.value[0] || null
+            }
+          }
+        }
+
+        const partner = computed(() => selectedPartner.value)
+
+        const radarChart = ref(null)
+        let chartInstance = null
+        const initChart = () => {
+          if (!radarChart.value) return
+          if (chartInstance) chartInstance.destroy()
+          const ctx = radarChart.value.getContext('2d')
+          chartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+              labels: ['同理心', '表达', '倾听', '自信', '策略'],
+              datasets: [{
+                label: '能力值',
+                data: [abilityStats.value.empathy, abilityStats.value.expression, abilityStats.value.listening, abilityStats.value.confidence, abilityStats.value.strategy],
+                backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                borderColor: 'rgba(139, 92, 246, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+                pointBorderColor: '#fff',
+              }]
+            },
+            options: {
+              scales: { r: { angleLines: { color: 'rgba(0,0,0,0.1)' }, grid: { color: 'rgba(0,0,0,0.1)' }, pointLabels: { font: { size: 12 }, color: '#666' }, ticks: { display: false, stepSize: 20 }, suggestedMin: 0, suggestedMax: 100 } },
+              plugins: { legend: { display: false } },
+              maintainAspectRatio: false,
+            }
+          })
+        }
+
+        onMounted(() => { nextTick(() => { if (currentTab.value === 'home') initChart() }) })
+        watch(currentTab, (newTab) => { if (newTab === 'home') nextTick(initChart) })
+
+        const showChat = ref(false)
+        const chatInput = ref('')
+        const chatMessages = ref([])
+        const isTyping = ref(false)
+
+        const currentTraining = ref(null)
+        const currentRound = ref(0)
+        const trainingMessages = ref([])
+        const trainingFinished = ref(false)
+        const trainingScore = ref(0)
+        const affectionGain = ref(0)
+        const trainingFeedback = ref('')
+
+        const trainingCategories = ref([
+          { id: 'icebreak', name: '破冰', icon: '☕', color: 'bg-blue-100 text-blue-600' },
+          { id: 'dating', name: '约会', icon: '💕', color: 'bg-pink-100 text-pink-600' },
+          { id: 'workplace', name: '职场', icon: '💼', color: 'bg-orange-100 text-orange-600' },
+          { id: 'social', name: '社交', icon: '👥', color: 'bg-green-100 text-green-600' },
+        ])
+
+        const currentCategory = ref('icebreak')
+
+        const trainingScenes = ref([
+          { id: 1, name: '咖啡厅破冰', description: '从环境开启话题，学习轻松聊天', difficulty: 1, stage: 1, unlockAffection: 0, unlocked: true, completed: true, category: 'icebreak', icon: '☕', time: '8分钟', reward: '+5' },
+          { id: 2, name: '兴趣社群自我介绍', description: '自信表达，展现个人魅力', difficulty: 2, stage: 2, unlockAffection: 50, unlocked: true, completed: true, category: 'icebreak', icon: '🎤', time: '10分钟', reward: '+8' },
+          { id: 3, name: '初次约会开场白', description: '掌握约会技巧，营造浪漫氛围', difficulty: 3, stage: 3, unlockAffection: 100, unlocked: false, completed: false, category: 'dating', icon: '💕', time: '12分钟', reward: '+10' },
+          { id: 4, name: '约会话题延伸', description: '学会深入交流，建立情感连接', difficulty: 3, stage: 4, unlockAffection: 150, unlocked: false, completed: false, category: 'dating', icon: '💬', time: '15分钟', reward: '+12' },
+          { id: 5, name: '职场会议发言', description: '提升职场沟通能力，建立良好人际关系', difficulty: 4, stage: 5, unlockAffection: 200, unlocked: false, completed: false, category: 'workplace', icon: '💼', time: '15分钟', reward: '+15' },
+          { id: 6, name: '向领导汇报工作', description: '清晰表达工作成果，获得认可', difficulty: 4, stage: 6, unlockAffection: 250, unlocked: false, completed: false, category: 'workplace', icon: '📊', time: '20分钟', reward: '+18' },
+          { id: 7, name: '朋友聚会活跃气氛', description: '学会调节气氛，成为聚会焦点', difficulty: 2, stage: 7, unlockAffection: 300, unlocked: false, completed: false, category: 'social', icon: '🎉', time: '10分钟', reward: '+10' },
+          { id: 8, name: '处理冲突与分歧', description: '学会理性沟通，化解矛盾', difficulty: 5, stage: 8, unlockAffection: 400, unlocked: false, completed: false, category: 'social', icon: '⚖️', time: '20分钟', reward: '+20' },
+        ])
+
+        const filteredScenes = computed(() => {
+          return trainingScenes.value.filter(s => s.category === currentCategory.value)
+        })
+
+        const trainingHistory = ref([
+          { id: 1, sceneName: '咖啡厅破冰', score: 85, date: '7月8日 15:30', affectionGain: 5, status: 'completed' },
+          { id: 2, sceneName: '兴趣社群自我介绍', score: 72, date: '7月7日 20:15', affectionGain: 8, status: 'completed' },
+          { id: 3, sceneName: '咖啡厅破冰', score: 68, date: '7月6日 18:00', affectionGain: 5, status: 'completed' },
+          { id: 4, sceneName: '兴趣社群自我介绍', score: 90, date: '7月5日 21:00', affectionGain: 12, status: 'completed' },
+          { id: 5, sceneName: '咖啡厅破冰', score: 78, date: '7月4日 19:30', affectionGain: 5, status: 'completed' },
+        ])
+
+        const achievements = ref([
+          { id: 1, name: '初次训练', description: '完成第一次社交训练', icon: '🌟', unlocked: true, date: '7月4日' },
+          { id: 2, name: '坚持不懈', description: '连续训练3天', icon: '🔥', unlocked: true, date: '7月6日' },
+          { id: 3, name: '社交达人', description: '累计训练10次', icon: '👑', unlocked: false, date: '' },
+          { id: 4, name: '完美表现', description: '获得一次满分', icon: '💎', unlocked: false, date: '' },
+          { id: 5, name: '全能选手', description: '完成所有场景训练', icon: '🏆', unlocked: false, date: '' },
+          { id: 6, name: '魅力四射', description: '累计好感度达到500', icon: '💖', unlocked: false, date: '' },
+        ])
+        const trainingRecords = ref([1, 2])
+
+        const weeklyReport = ref({
+          trainingCount: 5,
+          improvements: '本周你的倾听能力有明显提升，继续保持！',
+          recommendation: '建议多练习表达能力，可以尝试在社交场合主动分享自己的观点。'
+        })
+        const cbtRecords = ref([
+          { id: 1, situation: '今天开会不敢发言', date: '7月8日', status: 5 },
+          { id: 2, situation: '和朋友聊天时感到紧张', date: '7月6日', status: 5 },
+        ])
+        const nvcRecords = ref([
+          { id: 1, fullSentence: '我感到难过，因为我希望被理解', qualityScore: 85 },
+          { id: 2, fullSentence: '你迟到让我担心', qualityScore: 78 },
+        ])
+
+        const giftCoins = ref(100)
+        const gifts = ref([
+          { id: 1, name: '玫瑰花', avatar: '🌹', description: '浪漫之选', price: 20 },
+          { id: 2, name: '巧克力', avatar: '🍫', description: '甜蜜时刻', price: 30 },
+          { id: 3, name: '小熊', avatar: '🧸', description: '温暖陪伴', price: 50 },
+          { id: 4, name: '香水', avatar: '💐', description: '芬芳四溢', price: 80 },
+        ])
+        const giftHistory = ref([
+          { id: 1, giftAvatar: '🌹', giftName: '玫瑰花', date: '7月8日', affectionGain: 10 },
+          { id: 2, giftAvatar: '🍫', giftName: '巧克力', date: '7月5日', affectionGain: 15 },
+        ])
+
+        const doCheckin = () => {
+          if (checkedInToday.value) return
+          checkedInToday.value = true
+          checkinStreak.value++
+          affection.value = Math.min(100, affection.value + 5)
+          localStorage.setItem('lastCheckin', new Date().toDateString())
+          localStorage.setItem('checkinStreak', checkinStreak.value.toString())
+          localStorage.setItem('affection', affection.value.toString())
+        }
+
+        const openChat = () => {
+          showChat.value = true
+          if (chatMessages.value.length === 0) {
+            chatMessages.value.push({ type: 'ai', content: '嗨~ 今天过得怎么样？', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) })
+          }
+        }
+
+        const sendChat = () => {
+          if (!chatInput.value.trim()) return
+          chatMessages.value.push({ type: 'user', content: chatInput.value, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) })
+          chatInput.value = ''
+          isTyping.value = true
+          setTimeout(() => {
+            chatMessages.value.push({ type: 'ai', content: ['听起来很不错~', '我懂你的感受', '继续说说吧'][Math.floor(Math.random() * 3)], time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) })
+            isTyping.value = false
+          }, 1000)
+        }
+
+        const startTraining = (sceneId) => {
+          const scenes = {
+            1: { title: '咖啡厅破冰', rounds: [
+              { ai: '这家店的拿铁很出名，你平时喜欢喝什么？', options: [
+                { text: '我更喜欢美式', quality: 'safe', affection: 3, response: '美式也很不错，清爽不甜腻~' },
+                { text: '你推荐的这个听起来不错，我试试', quality: 'good', affection: 8, response: '太好了！这家的拉花也很精致哦。' },
+                { text: '我不喝咖啡', quality: 'bad', affection: -2, response: '那店里还有其他饮品，我帮你看看？' }
+              ]},
+              { ai: '周末一般怎么过？', options: [
+                { text: '宅家休息', quality: 'safe', affection: 3, response: '宅家也很舒服呢~' },
+                { text: '最近在学做咖啡，还挺有意思的', quality: 'good', affection: 8, response: '哇，好厉害！下次一定要尝尝你做的~' },
+                { text: '没什么', quality: 'bad', affection: -2, response: '...那下次我带你去一个有趣的地方吧？' }
+              ]},
+              { ai: '我最近在看一本书，特别有意思...', options: [
+                { text: '什么书？', quality: 'good', affection: 8, response: '是《小王子》哦，每次读都有不同的感受。' },
+                { text: '是吗', quality: 'safe', affection: 2, response: '嗯，讲的是关于成长和爱的故事。' },
+                { text: '哦', quality: 'bad', affection: -3, response: '...好吧。那我们换个话题？' }
+              ]}
+            ]},
+            2: { title: '兴趣社群自我介绍', rounds: [
+              { ai: '欢迎加入！简单介绍一下自己吧~', options: [
+                { text: '大家好，我平时喜欢看书', quality: 'safe', affection: 3, response: '欢迎！喜欢什么类型的书呢？' },
+                { text: '大家好！我叫小雨，喜欢心理学和文学~', quality: 'good', affection: 8, response: '哇，心理学！以后可以多交流~' },
+                { text: '嗯', quality: 'bad', affection: -2, response: '别紧张，随便说说就好~' }
+              ]},
+              { ai: '你最喜欢的一本书是什么？', options: [
+                { text: '《百年孤独》', quality: 'safe', affection: 3, response: '经典之作！魔幻现实主义的巅峰~' },
+                { text: '《被讨厌的勇气》！让我学会了课题分离', quality: 'good', affection: 8, response: '太棒了！阿德勒心理学很治愈呢~' },
+                { text: '没有', quality: 'bad', affection: -2, response: '可以慢慢找，总会遇到喜欢的~' }
+              ]},
+              { ai: '加入社群有什么期待吗？', options: [
+                { text: '想认识更多书友', quality: 'safe', affection: 3, response: '一定可以的！我们经常组织线下活动~' },
+                { text: '希望能提升自己的表达能力', quality: 'good', affection: 8, response: '这个想法太好了！每周都有分享会~' },
+                { text: '随便看看', quality: 'bad', affection: -2, response: '没关系，慢慢了解~' }
+              ]}
+            ]},
+            3: { title: '初次约会开场白', rounds: [
+              { ai: '今天天气真不错，你平时周末都喜欢做什么？', options: [
+                { text: '我喜欢看电影', quality: 'safe', affection: 3, response: '电影爱好者！最近有什么好看的推荐吗？' },
+                { text: '我喜欢户外运动，比如爬山和跑步', quality: 'good', affection: 8, response: '哇，我也喜欢！下次可以一起去爬山~' },
+                { text: '没什么特别的', quality: 'bad', affection: -2, response: '...那今天我带你去个好玩的地方吧。' }
+              ]},
+              { ai: '对了，你是怎么知道这家餐厅的？', options: [
+                { text: '朋友推荐的', quality: 'safe', affection: 3, response: '看来你的朋友很有品味呢~' },
+                { text: '我在网上看到评价很好，就想来试试', quality: 'good', affection: 8, response: '你很细心呢，谢谢你为今天做的准备~' },
+                { text: '随便选的', quality: 'bad', affection: -2, response: '...好吧，希望不会让你失望。' }
+              ]},
+              { ai: '你觉得今天的约会怎么样？', options: [
+                { text: '挺好的', quality: 'safe', affection: 3, response: '那就好~' },
+                { text: '很开心！希望下次还能一起出来', quality: 'good', affection: 10, response: '我也是！期待下次见面~' },
+                { text: '一般般', quality: 'bad', affection: -3, response: '抱歉让你失望了...' }
+              ]}
+            ]},
+            4: { title: '约会话题延伸', rounds: [
+              { ai: '我发现你对艺术很感兴趣？', options: [
+                { text: '是的，我喜欢看画展', quality: 'safe', affection: 3, response: '艺术能让人心情平静呢~' },
+                { text: '是的！我从小就学画画，你怎么知道的？', quality: 'good', affection: 8, response: '从你的气质就能看出来，很有艺术感~' },
+                { text: '一般吧', quality: 'bad', affection: -2, response: '好吧...' }
+              ]},
+              { ai: '如果可以去任何地方旅行，你想去哪里？', options: [
+                { text: '日本', quality: 'safe', affection: 3, response: '日本的樱花很美呢~' },
+                { text: '我想去冰岛看极光！一直是我的梦想', quality: 'good', affection: 8, response: '太棒了！极光真的很美，希望有一天能一起去~' },
+                { text: '没想过', quality: 'bad', affection: -2, response: '可以慢慢想想~' }
+              ]},
+              { ai: '你觉得什么样的关系最理想？', options: [
+                { text: '互相尊重吧', quality: 'safe', affection: 3, response: '是的，尊重很重要~' },
+                { text: '我觉得是互相理解和支持，一起成长', quality: 'good', affection: 10, response: '说得真好！这也是我向往的~' },
+                { text: '不知道', quality: 'bad', affection: -2, response: '...嗯。' }
+              ]}
+            ]},
+            5: { title: '职场会议发言', rounds: [
+              { ai: '小李，你对这个方案有什么看法？', options: [
+                { text: '我觉得方案挺好的', quality: 'safe', affection: 3, response: '谢谢你的认可~' },
+                { text: '方案整体不错，但在预算方面可能需要再优化一下', quality: 'good', affection: 8, response: '很有见地！具体说说你的想法？' },
+                { text: '没意见', quality: 'bad', affection: -2, response: '好吧...' }
+              ]},
+              { ai: '那你有什么具体的建议吗？', options: [
+                { text: '可以考虑缩减非必要开支', quality: 'safe', affection: 3, response: '这个方向不错~' },
+                { text: '我整理了几个优化方案，主要从人力成本和资源调配两方面入手', quality: 'good', affection: 10, response: '准备得很充分！请详细讲讲~' },
+                { text: '暂时没想到', quality: 'bad', affection: -3, response: '好吧，那我们继续讨论其他的。' }
+              ]}
+            ]},
+            6: { title: '向领导汇报工作', rounds: [
+              { ai: '这周工作进展怎么样？', options: [
+                { text: '还行', quality: 'safe', affection: 3, response: '还行？具体说说~' },
+                { text: '这周完成了三个核心任务，效率提升了20%', quality: 'good', affection: 10, response: '很不错！继续保持~' },
+                { text: '一般', quality: 'bad', affection: -2, response: '遇到什么困难了吗？' }
+              ]},
+              { ai: '下个月的目标是什么？', options: [
+                { text: '完成项目交付', quality: 'safe', affection: 3, response: '这是基本要求~' },
+                { text: '我计划提前一周完成项目，并优化流程提高效率', quality: 'good', affection: 10, response: '很有挑战性！我相信你能做到~' },
+                { text: '还没想好', quality: 'bad', affection: -3, response: '要尽快制定计划啊。' }
+              ]}
+            ]},
+            7: { title: '朋友聚会活跃气氛', rounds: [
+              { ai: '今天聚会感觉有点冷清，你有什么好主意吗？', options: [
+                { text: '不如玩个游戏吧', quality: 'safe', affection: 3, response: '好主意！玩什么呢？' },
+                { text: '我来带大家玩个有趣的小游戏，保证热闹起来', quality: 'good', affection: 8, response: '太棒了！交给你了~' },
+                { text: '不知道', quality: 'bad', affection: -2, response: '好吧...' }
+              ]},
+              { ai: '大家好像不太熟，怎么让气氛更融洽？', options: [
+                { text: '让大家自我介绍一下吧', quality: 'safe', affection: 3, response: '可以试试~' },
+                { text: '我来组织个破冰游戏，让大家快速熟悉起来', quality: 'good', affection: 10, response: '你真会调动气氛！' },
+                { text: '顺其自然吧', quality: 'bad', affection: -2, response: '好吧...' }
+              ]}
+            ]},
+            8: { title: '处理冲突与分歧', rounds: [
+              { ai: '你觉得这个方案应该这样做，但我认为那样更好...', options: [
+                { text: '那按你的来吧', quality: 'safe', affection: 3, response: '那好吧...' },
+                { text: '我们各自说说理由，一起分析哪个更合适', quality: 'good', affection: 10, response: '这才是解决问题的态度！' },
+                { text: '你不懂', quality: 'bad', affection: -5, response: '...我很受伤。' }
+              ]},
+              { ai: '我觉得你对我的方案有偏见...', options: [
+                { text: '我没有', quality: 'safe', affection: 2, response: '希望如此...' },
+                { text: '我理解你的感受，但我是就事论事，我们可以一起优化', quality: 'good', affection: 10, response: '谢谢你的理解，我们一起努力~' },
+                { text: '随便你怎么想', quality: 'bad', affection: -5, response: '...算了。' }
+              ]}
+            ]}
+          }
+          const scene = scenes[sceneId] || scenes[1]
+          currentTraining.value = scene
+          currentRound.value = 0
+          trainingMessages.value = []
+          trainingFinished.value = false
+          trainingScore.value = 0
+          affectionGain.value = 0
+          setTimeout(() => { trainingMessages.value.push({ type: 'ai', content: currentTraining.value.rounds[0].ai }) }, 500)
+        }
+
+        const selectOption = (option) => {
+          trainingMessages.value.push({ type: 'user', content: option.text, quality: option.quality })
+          trainingScore.value += option.quality === 'good' ? 35 : option.quality === 'safe' ? 25 : 10
+          affectionGain.value += option.affection
+          isTyping.value = true
+          setTimeout(() => {
+            trainingMessages.value.push({ type: 'ai', content: option.response })
+            isTyping.value = false
+            currentRound.value++
+            if (currentRound.value < currentTraining.value.rounds.length) {
+              setTimeout(() => { trainingMessages.value.push({ type: 'ai', content: currentTraining.value.rounds[currentRound.value].ai }) }, 800)
+            } else {
+              setTimeout(finishTrainingSession, 1000)
+            }
+          }, 1000)
+        }
+
+        const finishTrainingSession = () => {
+          trainingFinished.value = true
+          trainingFeedback.value = trainingScore.value >= 90 ? '太棒了！你的社交能力很强~' : trainingScore.value >= 60 ? '表现不错！继续加油~' : '别灰心，多练习几次就会越来越好的！'
+          affection.value = Math.min(100, affection.value + affectionGain.value)
+          localStorage.setItem('affection', affection.value.toString())
+        }
+
+        const finishTraining = () => {
+          currentTraining.value = null
+          currentRound.value = 0
+          trainingMessages.value = []
+          trainingFinished.value = false
+        }
+
+        return {
+          currentTab, partner, partners, selectedPartner, user, affection, checkedInToday, checkinStreak,
+          abilityStats, weeklyProgress, recentTrainings, isEvening, goodnightPlan,
+          abilityAverage, affectionLevel, greeting, radarChart,
+          showChat, chatInput, chatMessages, isTyping,
+          currentTraining, currentRound, trainingMessages, trainingFinished, trainingScore, affectionGain, trainingFeedback,
+          trainingScenes, trainingCategories, currentCategory, filteredScenes, trainingHistory, achievements,
+          trainingRecords, weeklyReport, cbtRecords, nvcRecords,
+          giftCoins, gifts, giftHistory, chatSession,
+          growthMilestones, learningCourses,
+          showCreatePartner, showPartnerSettings,
+          doCheckin, openChat, sendChat, startTraining, selectOption, finishTraining,
+          getCoreTypeLabel, getRevealedPreferences, getUnrevealedCount, switchPartner, deletePartner
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
