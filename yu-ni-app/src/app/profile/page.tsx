@@ -286,7 +286,10 @@ export default function ProfilePage() {
               </div>
             ))}
           </div>
-          <button className="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity">
+          <button
+              onClick={() => router.push('/membership')}
+              className="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+            >
             立即升级
           </button>
         </div>

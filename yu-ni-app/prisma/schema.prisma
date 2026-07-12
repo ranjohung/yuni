@@ -46,6 +46,7 @@ model User {
   mentalHealthTestRecords MentalHealthTestRecord[]
   dailyMoods            DailyMood[]
   customCharacters      CustomCharacter[]
+  moments               Moment[]
 }
 
 model Partner {
@@ -473,4 +474,18 @@ model CharacterOutfit {
   createdAt       DateTime        @default(now())
 
   character       CustomCharacter @relation(fields: [characterId], references: [id], onDelete: Cascade)
+}
+
+model Moment {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  content         String
+  images          String?
+  likes           Int      @default(0)
+  comments        Int      @default(0)
+  tags            String?
+  isAuto          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
