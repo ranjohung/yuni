@@ -407,9 +407,56 @@
             <span>{{ affection }}</span>
           </div>
           <div class="w-full bg-white/20 rounded-full h-3">
-            <div class="bg-white h-3 rounded-full transition-all duration-500" :style="{ width: (affection % 100) + '%' }"></div>
+            <div :class="affection < 30 ? 'bg-red-400' : affection < 60 ? 'bg-yellow-400' : 'bg-white'" class="h-3 rounded-full transition-all duration-500" :style="{ width: (affection % 100) + '%' }"></div>
           </div>
         </div>
+
+        <div v-if="affection < 50 && affection >= 30" class="mt-4 p-4 bg-yellow-500/20 rounded-xl">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">⚠️</span>
+            <span class="font-bold text-yellow-200">关系冷淡</span>
+          </div>
+          <p class="text-white/80 text-sm mb-3">伴侣感觉有些孤单，快多陪陪TA吧！</p>
+          <div class="flex flex-wrap gap-2">
+            <button @click="currentTab = 'chat'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
+              <span>💬</span>主动聊天
+            </button>
+            <button @click="currentTab = 'gifts'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
+              <span>🎁</span>送礼物
+            </button>
+            <button @click="currentTab = 'training'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
+              <span>⚡</span>互动训练
+            </button>
+          </div>
+        </div>
+
+        <div v-if="affection < 30" class="mt-4 p-4 bg-red-500/30 rounded-xl">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">🔴</span>
+            <span class="font-bold text-red-200">关系危机</span>
+          </div>
+          <p class="text-white/80 text-sm mb-3">伴侣对你的好感度已经很低了，如果不及时采取行动，你们的关系可能会破裂。</p>
+          <div class="flex flex-wrap gap-2">
+            <button @click="currentTab = 'chat'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
+              <span>💬</span>主动聊天
+            </button>
+            <button @click="currentTab = 'gifts'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
+              <span>🎁</span>送礼物
+            </button>
+            <button @click="currentTab = 'training'" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-all">
+              <span>⚡</span>互动训练
+            </button>
+          </div>
+        </div>
+
+        <div v-if="affection >= 80" class="mt-4 p-4 bg-green-500/20 rounded-xl">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">💞</span>
+            <span class="font-bold text-green-200">亲密无间</span>
+          </div>
+          <p class="text-white/80 text-sm">你们的关系非常好！继续保持互动，解锁更多专属回忆吧~</p>
+        </div>
+
         <div class="mt-6 flex gap-3">
           <button @click="currentTab = 'chat'" class="flex-1 bg-white/20 hover:bg-white/30 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all">
             <span>💝</span>互动
