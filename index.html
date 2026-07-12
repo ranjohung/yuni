@@ -25,7 +25,90 @@
   </style>
 </head>
 <body>
-  <div id="app" class="flex flex-col h-screen max-w-md mx-auto bg-gray-50 shadow-lg">
+  <div id="app">
+    <!-- 登录页面 -->
+    <div v-if="!loggedIn" class="flex flex-col h-screen max-w-md mx-auto bg-gradient-to-br from-indigo-50 via-white to-purple-50 shadow-lg overflow-auto">
+      <!-- 登录页 -->
+      <div v-if="!showRegister" class="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200">
+          <span class="text-4xl">💫</span>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">欢迎来到「与你」</h1>
+        <p class="text-gray-500 text-sm mb-8 text-center">你的专属AI社交模拟训练平台</p>
+
+        <div class="w-full space-y-4 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">手机号</label>
+            <input v-model="phoneNumber" type="tel" placeholder="请输入手机号" maxlength="11"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
+            <input v-model="loginPassword" type="password" placeholder="请输入密码"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
+            <p class="text-xs text-gray-400 mt-1.5 ml-1">体验账号：任意手机号 + 密码 123456</p>
+          </div>
+        </div>
+
+        <div v-if="loginError" class="w-full bg-red-50 border border-red-100 rounded-2xl p-3 mb-4">
+          <p class="text-sm text-red-600 text-center">{{ loginError }}</p>
+        </div>
+
+        <button @click="doLogin"
+          class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-[1.02] transition-all duration-300 mb-4">
+          登 录
+        </button>
+
+        <p class="text-sm text-gray-500">
+          还没有账号？
+          <button @click="showRegister = true; loginError = ''" class="text-indigo-500 font-medium hover:text-indigo-600">立即注册</button>
+        </p>
+      </div>
+
+      <!-- 注册页 -->
+      <div v-else class="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200">
+          <span class="text-4xl">✨</span>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">创建账号</h1>
+        <p class="text-gray-500 text-sm mb-8 text-center">开启你的社交成长之旅</p>
+
+        <div class="w-full space-y-4 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">手机号</label>
+            <input v-model="registerPhone" type="tel" placeholder="请输入手机号" maxlength="11"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">昵称</label>
+            <input v-model="registerNickname" type="text" placeholder="给自己取个昵称" maxlength="12"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
+            <input v-model="registerPassword" type="password" placeholder="设置密码（至少6位）"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-800 placeholder:text-gray-400">
+          </div>
+        </div>
+
+        <div v-if="registerError" class="w-full bg-red-50 border border-red-100 rounded-2xl p-3 mb-4">
+          <p class="text-sm text-red-600 text-center">{{ registerError }}</p>
+        </div>
+
+        <button @click="doRegister"
+          class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-[1.02] transition-all duration-300 mb-4">
+          注 册
+        </button>
+
+        <p class="text-sm text-gray-500">
+          已有账号？
+          <button @click="showRegister = false; registerError = ''" class="text-indigo-500 font-medium hover:text-indigo-600">立即登录</button>
+        </p>
+      </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div v-else class="flex flex-col h-screen max-w-md mx-auto bg-gray-50 shadow-lg">
     <header class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 shrink-0" v-if="currentTab !== 'chat'">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -973,7 +1056,7 @@
         </div>
       </div>
 
-      <button class="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all font-medium mb-4">
+      <button @click="doLogout" class="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all font-medium mb-4">
         <span>🚪</span>
         <span>退出登录</span>
       </button>
@@ -1146,6 +1229,15 @@
     createApp({
       setup() {
         const currentTab = ref('home')
+        const loggedIn = ref(localStorage.getItem('yn_loggedIn') === 'true')
+        const showRegister = ref(false)
+        const phoneNumber = ref('')
+        const loginPassword = ref('')
+        const loginError = ref('')
+        const registerPhone = ref('')
+        const registerNickname = ref('')
+        const registerPassword = ref('')
+        const registerError = ref('')
         const partners = ref([
           {
             id: 1,
@@ -1215,7 +1307,13 @@
           INTJ: '建筑师',
         }
 
-        const user = ref({ nickname: '小雨', points: 1280 })
+        const user = ref({
+          nickname: localStorage.getItem('yn_phone')
+            ? (JSON.parse(localStorage.getItem('yn_user_' + localStorage.getItem('yn_phone')) || '{}').nickname || '用户')
+            : '小雨',
+          points: 1280,
+          phone: localStorage.getItem('yn_phone') || ''
+        })
         const affection = ref(parseInt(localStorage.getItem('affection') || '65'))
         const checkedInToday = ref(localStorage.getItem('lastCheckin') === new Date().toDateString())
         const checkinStreak = ref(parseInt(localStorage.getItem('checkinStreak') || '3'))
@@ -1619,6 +1717,77 @@
           localStorage.setItem('affection', affection.value.toString())
         }
 
+        const doLogin = () => {
+          if (!phoneNumber.value.trim()) {
+            loginError.value = '请输入手机号'
+            return
+          }
+          if (!loginPassword.value) {
+            loginError.value = '请输入密码'
+            return
+          }
+          if (loginPassword.value !== '123456') {
+            loginError.value = '密码错误，体验密码为 123456'
+            return
+          }
+          loginError.value = ''
+          const savedUser = localStorage.getItem('yn_user_' + phoneNumber.value.trim())
+          if (savedUser) {
+            const userData = JSON.parse(savedUser)
+            user.value.nickname = userData.nickname || '用户'
+          } else {
+            // 新用户自动注册
+            const newUser = { phone: phoneNumber.value.trim(), nickname: '用户' + phoneNumber.value.slice(-4) }
+            localStorage.setItem('yn_user_' + phoneNumber.value.trim(), JSON.stringify(newUser))
+            user.value.nickname = newUser.nickname
+          }
+          localStorage.setItem('yn_loggedIn', 'true')
+          localStorage.setItem('yn_phone', phoneNumber.value.trim())
+          user.value.phone = phoneNumber.value.trim()
+          loggedIn.value = true
+        }
+
+        const doRegister = () => {
+          if (!registerPhone.value.trim()) {
+            registerError.value = '请输入手机号'
+            return
+          }
+          if (registerPhone.value.trim().length < 11) {
+            registerError.value = '请输入正确的手机号'
+            return
+          }
+          if (!registerNickname.value.trim()) {
+            registerError.value = '请输入昵称'
+            return
+          }
+          if (!registerPassword.value || registerPassword.value.length < 6) {
+            registerError.value = '密码至少6位'
+            return
+          }
+          registerError.value = ''
+          const savedUser = localStorage.getItem('yn_user_' + registerPhone.value.trim())
+          if (savedUser) {
+            registerError.value = '该手机号已注册，请直接登录'
+            return
+          }
+          const newUser = { phone: registerPhone.value.trim(), nickname: registerNickname.value.trim() }
+          localStorage.setItem('yn_user_' + registerPhone.value.trim(), JSON.stringify(newUser))
+          localStorage.setItem('yn_loggedIn', 'true')
+          localStorage.setItem('yn_phone', registerPhone.value.trim())
+          user.value.nickname = newUser.nickname
+          user.value.phone = newUser.phone
+          loggedIn.value = true
+        }
+
+        const doLogout = () => {
+          localStorage.removeItem('yn_loggedIn')
+          localStorage.removeItem('yn_phone')
+          loggedIn.value = false
+          phoneNumber.value = ''
+          loginPassword.value = ''
+          loginError.value = ''
+        }
+
         const finishTraining = () => {
           currentTraining.value = null
           currentRound.value = 0
@@ -1627,7 +1796,9 @@
         }
 
         return {
-          currentTab, partner, partners, selectedPartner, user, affection, checkedInToday, checkinStreak,
+          currentTab, loggedIn, showRegister, phoneNumber, loginPassword, loginError,
+          registerPhone, registerNickname, registerPassword, registerError,
+          partner, partners, selectedPartner, user, affection, checkedInToday, checkinStreak,
           abilityStats, weeklyProgress, recentTrainings, isEvening, goodnightPlan,
           abilityAverage, abilityStatsArray, affectionLevel, greeting, radarChart,
           showChat, chatInput, chatMessages, isTyping,
@@ -1638,6 +1809,7 @@
           growthMilestones, learningCourses,
           showCreatePartner, showPartnerSettings,
           doCheckin, openChat, sendChat, startTraining, selectOption, finishTraining,
+          doLogin, doRegister, doLogout,
           getCoreTypeLabel, getRevealedPreferences, getUnrevealedCount, switchPartner, deletePartner
         }
       }
