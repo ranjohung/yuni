@@ -11,6 +11,9 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   createdAt: Date
+  emotionType?: string
+  emotionScore?: number
+  nvcSentence?: boolean
 }
 
 interface Partner {
@@ -225,18 +228,43 @@ export default function ChatPage() {
                   className={`max-w-[80%] px-4 py-3 rounded-2xl ${msg.role === 'user'
                       ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-tr-sm'
                       : 'bg-white text-gray-800 rounded-tl-sm shadow-sm'
-                    }`}
+                    } ${msg.emotionType === 'negative' ? 'ring-1 ring-red-300' : msg.emotionType === 'positive' ? 'ring-1 ring-green-300' : ''}`}
                 >
+                  {msg.nvcSentence && (
+                    <div className="flex items-center gap-1 mb-2">
+                      <span className="px-2 py-0.5 bg-green-500/20 text-green-600 text-xs rounded-full flex items-center gap-1">
+                        <span>✨</span> NVC表达
+                      </span>
+                    </div>
+                  )}
+                  {msg.emotionType && (
+                    <div className="flex items-center gap-1 mb-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        msg.emotionType === 'positive' ? 'bg-green-100 text-green-600' :
+                        msg.emotionType === 'negative' ? 'bg-red-100 text-red-600' :
+                        'bg-blue-100 text-blue-600'
+                      }`}>
+                        {msg.emotionType === 'positive' ? '😊 积极' :
+                         msg.emotionType === 'negative' ? '😔 消极' : '😐 中性'}
+                        {msg.emotionScore && ` ${Math.round(msg.emotionScore)}%`}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-sm leading-relaxed">{msg.content}</p>
-                  <p
-                    className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/60' : 'text-gray-400'
-                      }`}
-                  >
-                    {new Date(msg.createdAt).toLocaleTimeString('zh-CN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
+                  <div className={`flex items-center gap-2 mt-1 ${msg.role === 'user' ? 'text-white/60' : 'text-gray-400'}`}>
+                    <span className="text-xs">
+                      {new Date(msg.createdAt).toLocaleDateString('zh-CN', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    <span className="text-xs">
+                      {new Date(msg.createdAt).toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
