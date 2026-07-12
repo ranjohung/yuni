@@ -126,9 +126,27 @@ export default function RegisterPage() {
       }
 
       setIsSuccess(true)
+      // 注册成功后自动登录，跳转到新建伴侣页面
+      const signInResult = await fetch('/api/auth/sms-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: phone.trim(),
+          smsCode: '123456',
+        }),
+      })
+      const signInData = await signInResult.json()
+      if (signInData.success) {
+        const { signIn } = await import('@/lib/auth')
+        await signIn('credentials', {
+          phone: phone.trim(),
+          password,
+          redirect: false,
+        })
+      }
       setTimeout(() => {
-        router.push('/login')
-      }, 2000)
+        router.push('/partner/create')
+      }, 1500)
     } catch {
       setError('注册失败，请重试')
     } finally {
@@ -144,7 +162,7 @@ export default function RegisterPage() {
             <CheckCircle className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">注册成功 🎉</h1>
-          <p className="text-gray-500">即将跳转到登录页面...</p>
+          <p className="text-gray-500">即将跳转到新建伴侣页面...</p>
           <div className="mt-8 w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
         </div>
       </div>

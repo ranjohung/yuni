@@ -107,7 +107,7 @@ export default function LoginPage() {
         if (result?.error) {
           setError('登录失败，请重试')
         } else {
-          router.push('/')
+          router.push('/partner/create')
         }
       } catch {
         setError('登录失败，请重试')
@@ -125,7 +125,7 @@ export default function LoginPage() {
     if (result?.error) {
       setError('手机号或密码错误')
     } else {
-      router.push('/')
+      router.push('/partner/create')
     }
 
     setIsLoading(false)

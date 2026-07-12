@@ -1981,6 +1981,7 @@
           localStorage.setItem('yn_phone', phoneNumber.value.trim())
           user.value.phone = phoneNumber.value.trim()
           loggedIn.value = true
+          currentTab.value = 'partner'
         }
 
         const handleSendSms = () => {
@@ -2061,6 +2062,7 @@
           user.value.nickname = newUser.nickname
           user.value.phone = newUser.phone
           loggedIn.value = true
+          currentTab.value = 'partner'
         }
 
         const doLogout = () => {
