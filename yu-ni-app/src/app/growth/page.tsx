@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import { TrendingUp, BookOpen, Brain, Heart, Award, ArrowRight, Target, Calendar, Zap, Star, CheckCircle, Clock, BarChart3 } from 'lucide-react'
+import { TrendingUp, BookOpen, Brain, Heart, Award, ArrowRight, Target, Calendar, Zap, Star, CheckCircle, Clock, BarChart3, Moon } from 'lucide-react'
 
 interface AbilityStats {
   communication: number
@@ -312,6 +312,39 @@ export default function GrowthPage() {
             <span className="text-gray-500 text-sm">非暴力沟通</span>
             <ArrowRight className="w-4 h-4 text-gray-400 self-end" />
           </button>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm p-5">
+          <h3 className="font-bold text-gray-800 mb-4">📌 留存工具</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => router.push('/nightly')}
+              className="p-4 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors text-center"
+            >
+              <div className="w-10 h-10 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Moon className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-medium text-gray-700">晚安计划</span>
+            </button>
+            <button
+              onClick={() => router.push('/diary')}
+              className="p-4 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors text-center"
+            >
+              <div className="w-10 h-10 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-medium text-gray-700">情绪日记</span>
+            </button>
+            <button
+              onClick={() => router.push('/report')}
+              className="p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors text-center"
+            >
+              <div className="w-10 h-10 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-medium text-gray-700">每周报告</span>
+            </button>
+          </div>
         </div>
 
         <div className="bg-gradient-to-r from-primary-100 to-secondary-100 rounded-2xl p-5">
