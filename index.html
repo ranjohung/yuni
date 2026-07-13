@@ -1912,11 +1912,9 @@
         }
 
         onMounted(() => {
-          localStorage.removeItem('yn_loggedIn')
-          localStorage.removeItem('yn_phone')
-          loggedIn.value = false
-          nextTick(() => { if (currentTab.value === 'home') initChart() })
-        })
+            // 初始不清理登录状态，让用户能直接看到登录页面
+            nextTick(() => { if (currentTab.value === 'home') initChart() })
+          })
         watch(currentTab, (newTab) => { if (newTab === 'home') nextTick(initChart) })
 
         const showChat = ref(false)
