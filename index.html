@@ -1974,6 +1974,7 @@
           }
           partners.value.push(newPartner)
           selectedPartner.value = newPartner
+          showCreatePartner.value = false
           currentTab.value = 'partner'
           newPartnerName.value = ''
           newPartnerAvatar.value = '💝'
@@ -2019,8 +2020,20 @@
         }
 
         onMounted(() => {
-            // 初始不清理登录状态，让用户能直接看到登录页面
-            // 缓存刷新: v2
+            const savedLoggedIn = localStorage.getItem('yn_loggedIn')
+            const savedPhone = localStorage.getItem('yn_phone')
+            if (savedLoggedIn === 'true' && savedPhone) {
+              loggedIn.value = true
+              user.value.phone = savedPhone
+              const savedUser = localStorage.getItem('yn_user_' + savedPhone)
+              if (savedUser) {
+                const parsed = JSON.parse(savedUser)
+                user.value.nickname = parsed.nickname || '用户'
+              }
+              if (partners.value.length === 0) {
+                showCreatePartner.value = true
+              }
+            }
             nextTick(() => { if (currentTab.value === 'home') initChart() })
           })
         watch(currentTab, (newTab) => { if (newTab === 'home') nextTick(initChart) })
@@ -2330,7 +2343,7 @@
           localStorage.setItem('yn_phone', phoneNumber.value.trim())
           user.value.phone = phoneNumber.value.trim()
           loggedIn.value = true
-          showOnboarding.value = true
+          showCreatePartner.value = true
         }
 
         const handleSendSms = () => {
@@ -2411,7 +2424,7 @@
           user.value.nickname = newUser.nickname
           user.value.phone = newUser.phone
           loggedIn.value = true
-          showOnboarding.value = true
+          showCreatePartner.value = true
         }
 
         const doLogout = () => {
