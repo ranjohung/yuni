@@ -1275,6 +1275,24 @@
             <span class="text-xs text-gray-600">晚安计划</span>
           </a>
         </div>
+        <div class="grid grid-cols-4 gap-3 mt-3">
+          <button @click="openTimeTravel" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all cursor-pointer">
+            <div class="w-12 h-12 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center"><span>🕰️</span></div>
+            <span class="text-xs text-gray-600">时空穿梭</span>
+          </button>
+          <a href="http://localhost:3000/character" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center"><span>🎭</span></div>
+            <span class="text-xs text-gray-600">自定义角色</span>
+          </a>
+          <a href="http://localhost:3000/shop" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center"><span>🛒</span></div>
+            <span class="text-xs text-gray-600">道具商店</span>
+          </a>
+          <a href="http://localhost:3000/mentalhealth" target="_blank" class="flex flex-col items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-all">
+            <div class="w-12 h-12 bg-teal-100 text-teal-500 rounded-full flex items-center justify-center"><span>💚</span></div>
+            <span class="text-xs text-gray-600">心理健康</span>
+          </a>
+        </div>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm p-5 mb-4">
@@ -1368,13 +1386,82 @@
             <span class="flex-1 text-left font-medium text-gray-800">帮助与反馈</span>
             <span class="text-gray-400">→</span>
           </div>
-          <a href="http://localhost:3000/invite" target="_blank" class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer">
-            <div class="w-10 h-10 bg-green-100 text-green-500 rounded-full flex items-center justify-center">
-              <span>👥</span>
+          <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-200">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <span>👥</span>
+                <h3 class="font-bold text-gray-800">邀请好友</h3>
+              </div>
+              <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">奖励进行中</span>
             </div>
-            <span class="flex-1 text-left font-medium text-gray-800">邀请好友</span>
-            <span class="text-gray-400">→</span>
-          </a>
+            <div class="flex items-center gap-3 mb-4">
+              <div class="flex-1 bg-white rounded-xl p-3 border border-green-200 flex items-center justify-between">
+                <span class="font-mono text-green-600 font-bold">{{ user.inviteCode }}</span>
+                <button @click="copyInviteCode" class="text-sm text-green-500 hover:text-green-600 font-medium">复制</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mb-4">
+              <div class="bg-white/60 rounded-xl p-3 text-center">
+                <p class="text-xl font-bold text-green-600">{{ inviteStats.totalInvited }}</p>
+                <p class="text-xs text-gray-500">邀请人数</p>
+              </div>
+              <div class="bg-white/60 rounded-xl p-3 text-center">
+                <p class="text-xl font-bold text-green-600">{{ inviteStats.totalRewards }}</p>
+                <p class="text-xs text-gray-500">获得奖励</p>
+              </div>
+              <div class="bg-white/60 rounded-xl p-3 text-center">
+                <p class="text-xl font-bold text-green-600">{{ inviteStats.referralBonus }}</p>
+                <p class="text-xs text-gray-500">待领取</p>
+              </div>
+            </div>
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">每邀请1人</span>
+                <span class="text-green-600 font-medium">+50积分 +10好感度</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">邀请3人</span>
+                <span class="text-green-600 font-medium">解锁专属伴侣</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">邀请10人</span>
+                <span class="text-green-600 font-medium">7天会员体验</span>
+              </div>
+            </div>
+            <button @click="shareInvite" class="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity">
+              立即邀请好友
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-5 border border-blue-200 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span>✅</span>
+            <h3 class="font-bold text-gray-800">实名认证</h3>
+          </div>
+          <span :class="user.realnameStatus === 'verified' ? 'text-green-600 bg-green-100' : user.realnameStatus === 'pending' ? 'text-yellow-600 bg-yellow-100' : 'text-gray-600 bg-gray-100'" class="text-xs px-2 py-1 rounded-full">
+            {{ user.realnameStatus === 'verified' ? '已认证' : user.realnameStatus === 'pending' ? '审核中' : '未认证' }}
+          </span>
+        </div>
+        <div v-if="user.realnameStatus !== 'verified'" class="space-y-3">
+          <input v-model="realnameInfo.name" type="text" placeholder="真实姓名" maxlength="20"
+            class="w-full px-4 py-3 bg-white border-2 border-blue-100 rounded-xl text-gray-800 placeholder:text-gray-400
+              focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all">
+          <input v-model="realnameInfo.idCard" type="text" placeholder="身份证号码" maxlength="18"
+            class="w-full px-4 py-3 bg-white border-2 border-blue-100 rounded-xl text-gray-800 placeholder:text-gray-400
+              focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all">
+          <button @click="submitRealname" class="w-full py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium hover:opacity-90 transition-opacity">
+            提交认证
+          </button>
+        </div>
+        <div v-else class="flex items-center gap-3 p-4 bg-green-100 rounded-xl">
+          <span class="text-2xl">🎉</span>
+          <div>
+            <p class="font-medium text-green-800">实名认证成功</p>
+            <p class="text-xs text-green-600">已享受全部功能权益</p>
+          </div>
         </div>
       </div>
 
@@ -1715,7 +1802,9 @@
         const user = ref({
           nickname: '用户',
           points: 1280,
-          phone: ''
+          phone: '',
+          inviteCode: 'YN' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+          realnameStatus: 'unverified'
         })
         const affection = ref(parseInt(localStorage.getItem('affection') || '65'))
         const checkedInToday = ref(localStorage.getItem('lastCheckin') === new Date().toDateString())
@@ -1760,6 +1849,17 @@
           { id: 4, sceneName: '兴趣社群自我介绍', score: 90, status: 1, date: '7月5日' },
         ])
         const chatSession = ref({ lastMessage: '暂无消息' })
+        
+        const inviteStats = ref({
+          totalInvited: 3,
+          totalRewards: 150,
+          referralBonus: 50
+        })
+        
+        const realnameInfo = ref({
+          name: '',
+          idCard: ''
+        })
 
         const isEvening = computed(() => new Date().getHours() >= 19)
         const goodnightPlan = computed(() => {
@@ -2357,6 +2457,43 @@
           currentTab.value = 'partner'
         }
 
+        const copyInviteCode = () => {
+          navigator.clipboard.writeText(user.value.inviteCode).then(() => {
+            alert('邀请码已复制')
+          })
+        }
+
+        const shareInvite = () => {
+          const shareText = `快来加入「与你」！使用我的邀请码 ${user.value.inviteCode} 注册，我们一起提升社交能力~`
+          if (navigator.share) {
+            navigator.share({ title: '与你 - AI社交模拟训练', text: shareText })
+          } else {
+            navigator.clipboard.writeText(shareText).then(() => {
+              alert('邀请链接已复制')
+            })
+          }
+        }
+
+        const submitRealname = () => {
+          if (!realnameInfo.value.name.trim()) {
+            alert('请输入真实姓名')
+            return
+          }
+          if (!realnameInfo.value.idCard.trim() || realnameInfo.value.idCard.length !== 18) {
+            alert('请输入正确的身份证号码')
+            return
+          }
+          user.value.realnameStatus = 'pending'
+          setTimeout(() => {
+            user.value.realnameStatus = 'verified'
+            alert('实名认证成功！')
+          }, 1500)
+        }
+
+        const openTimeTravel = () => {
+          alert('时空穿梭功能开发中，敬请期待！')
+        }
+
         const finishTraining = () => {
           currentTraining.value = null
           currentRound.value = 0
@@ -2383,10 +2520,11 @@
           showCreatePartner, showPartnerSettings,
           newPartnerAvatar, newPartnerName, newPartnerType, newPartnerStory, partnerTypes, partnerPersonality, backgroundStories,
           onboardingStep, selectedOnboardingPartner, onboardingNickname, onboardingPartners,
+          inviteStats, realnameInfo,
           doCheckin, openChat, sendChat, startTraining, selectOption, finishTraining,
           doLogin, doRegister, doLogout, handleSendSms, handleRegSendSms, fillDemoAccount,
           getCoreTypeLabel, getRevealedPreferences, getUnrevealedCount, switchPartner, deletePartner, createPartner,
-          finishOnboarding
+          finishOnboarding, copyInviteCode, shareInvite, submitRealname, openTimeTravel
         }
       }
     }).mount('#app')
