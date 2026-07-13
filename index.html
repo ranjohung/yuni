@@ -1913,6 +1913,7 @@
 
         onMounted(() => {
             // 初始不清理登录状态，让用户能直接看到登录页面
+            // 缓存刷新: v2
             nextTick(() => { if (currentTab.value === 'home') initChart() })
           })
         watch(currentTab, (newTab) => { if (newTab === 'home') nextTick(initChart) })
