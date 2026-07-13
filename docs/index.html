@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>与你 - AI数字人社交模拟与陪伴成长平台</title>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -172,7 +172,7 @@
 
         <div class="w-full space-y-4 mb-4">
           <!-- 步骤1：手机号验证 -->
-          <template v-if="registerStep === 1">
+          <div v-if="registerStep === 1">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">手机号</label>
               <div class="relative group">
@@ -199,10 +199,10 @@
               </div>
               <p class="text-xs text-gray-400 mt-1.5 ml-1">体验验证码：123456</p>
             </div>
-          </template>
+          </div>
 
           <!-- 步骤2：填写信息 -->
-          <template v-if="registerStep === 2">
+          <div v-if="registerStep === 2">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">昵称</label>
               <div class="relative group">
@@ -270,7 +270,7 @@
                 <button class="text-indigo-500 ml-0.5">《隐私政策》</button>
               </p>
             </div>
-          </template>
+          </div>
         </div>
 
         <!-- 注册错误提示 -->
@@ -1620,6 +1620,7 @@
       </div>
     </div>
   </div>
+</div>
 
   <script>
     const { createApp, ref, computed, onMounted, watch, nextTick } = Vue
