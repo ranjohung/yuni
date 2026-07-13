@@ -1624,6 +1624,13 @@
 
   <script>
     const { createApp, ref, computed, onMounted, watch, nextTick } = Vue
+    
+    Vue.config.errorHandler = function(err, vm, info) {
+      console.error('Vue Render Error:', err.message, info)
+      if (vm && vm.$el) {
+        vm.$el.innerHTML = '<div style="padding: 20px; color: red; font-family: sans-serif;">Vue渲染错误: ' + err.message + '</div>'
+      }
+    }
 
     createApp({
       setup() {
