@@ -322,10 +322,11 @@
               <div class="absolute bottom-20 left-20 text-xl opacity-20">⭐</div>
               <div class="absolute bottom-10 right-10 text-2xl opacity-20">🌟</div>
             </div>
-            <div class="text-center">
+            <div class="text-center relative inline-block">
               <div class="text-9xl cursor-pointer hover:scale-105 transition-transform" @click="triggerPartnerAnimation">
                 {{ partner.avatar }}
               </div>
+              <div class="absolute bottom-2 right-2 w-5 h-5 bg-green-400 rounded-full border-3 border-white shadow-sm"></div>
               <p class="text-sm text-gray-400 mt-2">点击TA互动</p>
             </div>
             <div class="absolute top-4 right-4 flex items-center gap-2">
@@ -378,17 +379,20 @@
                 <span class="text-sm font-medium text-gray-700">📱 伴侣动态</span>
                 <span class="text-xs text-gray-400">{{ showPartnerMoment ? '收起' : '展开' }}</span>
               </div>
-              <div v-if="showPartnerMoment && partnerMoments.length > 0" class="mt-2 p-3 bg-gray-50 rounded-xl">
-                <div class="flex items-start gap-3">
+              <div v-if="showPartnerMoment && partnerMoments.length > 0" class="mt-2 p-3 bg-gray-50 rounded-xl space-y-3">
+                <div v-for="moment in partnerMoments.slice(0, 3)" :key="moment.id" class="flex items-start gap-3">
                   <span class="text-2xl">{{ partner.avatar }}</span>
                   <div class="flex-1">
                     <div class="flex items-center gap-1">
                       <span class="text-sm font-medium text-gray-800">{{ partner.name }}</span>
-                      <span class="text-xs text-gray-400">{{ partnerMoments[0].time }}</span>
+                      <span class="text-xs text-gray-400">{{ moment.time }}</span>
                     </div>
-                    <p class="text-sm text-gray-600 mt-1">{{ partnerMoments[0].content }}</p>
+                    <p class="text-sm text-gray-600 mt-1">{{ moment.content }}</p>
                   </div>
                 </div>
+                <button v-if="partnerMoments.length > 3" @click="showMoments = true" class="w-full py-2 text-center text-sm text-indigo-500 font-medium hover:text-indigo-600 transition-colors">
+                  查看更多 →
+                </button>
               </div>
             </div>
           </div>
@@ -709,7 +713,7 @@
         </div>
 
         <div class="space-y-3">
-          <button class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
+          <button @click="showMyImage = true" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
             <div class="flex items-center gap-3">
               <span class="text-xl">👤</span>
               <span class="text-gray-700">编辑资料</span>
@@ -728,7 +732,7 @@
               <span class="text-gray-400">→</span>
             </button>
 
-          <button class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
+          <button @click="showPrivacy = true" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
             <div class="flex items-center gap-3">
               <span class="text-xl">🔒</span>
               <span class="text-gray-700">隐私与数据</span>
@@ -736,10 +740,18 @@
             <span class="text-gray-400">→</span>
           </button>
 
-          <button class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
+          <button @click="showAntiAddiction = true" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
             <div class="flex items-center gap-3">
               <span class="text-xl">⏱️</span>
               <span class="text-gray-700">防沉迷设置</span>
+            </div>
+            <span class="text-gray-400">→</span>
+          </button>
+
+          <button @click="showRealName = true" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🪪</span>
+              <span class="text-gray-700">实名认证</span>
             </div>
             <span class="text-gray-400">→</span>
           </button>
@@ -905,26 +917,52 @@
       </div>
 
       <div v-if="showCards" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showCards = false">
-        <div class="bg-white rounded-2xl w-full max-w-sm h-[70vh] flex flex-col">
+        <div class="bg-white rounded-2xl w-full max-w-sm h-[80vh] flex flex-col">
           <div class="flex items-center justify-between p-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-800">📚 学习卡片库</h3>
             <button @click="showCards = false" class="text-gray-400 hover:text-gray-600">✕</button>
           </div>
+          <div class="flex gap-2 px-4 pt-3 pb-2 overflow-x-auto">
+            <button v-for="cat in cardCategories" :key="cat" @click="cardFilter = cat"
+              class="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
+              :class="cardFilter === cat ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+              {{ cat }}
+            </button>
+          </div>
           <div class="flex-1 overflow-auto p-4 space-y-3">
-            <div v-for="card in learningCards" :key="card.id" class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4">
-              <div class="flex items-center justify-between mb-2">
-                <span class="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-xs rounded-full">{{ card.category }}</span>
-                <span v-if="collectedCards.find(c => c.id === card.id)" class="text-xs text-green-500">✓ 已收藏</span>
+            <div v-for="card in filteredCards" :key="card.id"
+              class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl overflow-hidden transition-all">
+              <div class="p-4 cursor-pointer" @click="toggleExpandCard(card.id)">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-xs rounded-full">{{ card.category }}</span>
+                  <div class="flex items-center gap-2">
+                    <span v-if="collectedCards.find(c => c.id === card.id)" class="text-xs text-green-500">⭐ 已收藏</span>
+                    <span class="text-gray-400 text-xs">{{ expandedCardId === card.id ? '▲' : '▼' }}</span>
+                  </div>
+                </div>
+                <h4 class="font-semibold text-gray-800">{{ card.title }}</h4>
+                <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ card.content }}</p>
               </div>
-              <h4 class="font-semibold text-gray-800 mb-2">{{ card.title }}</h4>
-              <p class="text-sm text-gray-600 mb-3">{{ card.content }}</p>
-              <div class="space-y-1">
-                <p class="text-xs text-gray-500 mb-1">💡 小贴士：</p>
-                <div v-for="(tip, idx) in card.tips" :key="idx" class="text-xs text-gray-500 ml-2">• {{ tip }}</div>
+              <div v-if="expandedCardId === card.id" class="px-4 pb-4 border-t border-indigo-100/50">
+                <p class="text-sm text-gray-700 my-3">{{ card.content }}</p>
+                <div class="space-y-1 mb-3">
+                  <p class="text-xs text-gray-500 font-medium">💡 小贴士：</p>
+                  <div v-for="(tip, idx) in card.tips" :key="idx" class="text-xs text-gray-500 ml-2">• {{ tip }}</div>
+                </div>
+                <button v-if="!collectedCards.find(c => c.id === card.id)"
+                  @click.stop="collectCard(card)"
+                  class="w-full py-2 bg-indigo-100 text-indigo-600 text-sm rounded-lg hover:bg-indigo-200 transition-colors">
+                  + 收藏
+                </button>
+                <button v-else
+                  @click.stop="removeCollectCard(card.id)"
+                  class="w-full py-2 bg-gray-100 text-gray-500 text-sm rounded-lg hover:bg-gray-200 transition-colors">
+                  取消收藏
+                </button>
               </div>
-              <button v-if="!collectedCards.find(c => c.id === card.id)" @click="collectCard(card)" class="mt-3 w-full py-2 bg-indigo-100 text-indigo-600 text-sm rounded-lg hover:bg-indigo-200 transition-colors">
-                + 收藏
-              </button>
+            </div>
+            <div v-if="filteredCards.length === 0" class="text-center py-8 text-gray-400">
+              <p class="text-sm">该分类暂无卡片</p>
             </div>
           </div>
         </div>
@@ -1098,6 +1136,178 @@
                     <span class="text-green-500">✅</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我的形象弹窗 -->
+      <div v-if="showMyImage" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showMyImage = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm max-h-[80vh] flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">👤 我的形象</h3>
+            <button @click="showMyImage = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <div class="flex-1 overflow-auto p-4">
+            <div class="text-center mb-6">
+              <div class="text-6xl mb-2">{{ selectedAvatar || '🧑' }}</div>
+              <p class="text-sm text-gray-500">当前头像</p>
+            </div>
+            <h4 class="text-sm font-semibold text-gray-700 mb-3">选择头像</h4>
+            <div class="grid grid-cols-6 gap-2 mb-6">
+              <button v-for="av in ['👦','👧','🧑','👨','👩','🧑‍💻']" :key="av" @click="selectedAvatar = av"
+                class="text-2xl p-2 rounded-xl flex items-center justify-center transition-colors"
+                :class="selectedAvatar === av ? 'bg-indigo-100 ring-2 ring-indigo-400' : 'bg-gray-50 hover:bg-gray-100'">
+                {{ av }}
+              </button>
+            </div>
+            <h4 class="text-sm font-semibold text-gray-700 mb-2">修改昵称</h4>
+            <input v-model="myNickname" type="text" placeholder="输入新昵称" maxlength="12"
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 mb-4">
+            <button @click="if(selectedAvatar) user.avatar = selectedAvatar; if(myNickname.trim()) user.nickname = myNickname.trim(); showMyImage = false"
+              class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all">
+              保存修改
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 隐私与数据弹窗 -->
+      <div v-if="showPrivacy" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showPrivacy = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm max-h-[80vh] flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">🔒 隐私与数据</h3>
+            <button @click="showPrivacy = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <div class="flex-1 overflow-auto p-4 space-y-4">
+            <div class="bg-gray-50 rounded-xl p-4">
+              <h4 class="text-sm font-semibold text-gray-700 mb-1">聊天记录</h4>
+              <p class="text-xs text-gray-400 mb-3">清除后将无法恢复</p>
+              <button @click="chatMessages.length = 0; showPrivacy = false"
+                class="w-full py-2.5 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors text-sm">
+                清除聊天记录
+              </button>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+              <h4 class="text-sm font-semibold text-gray-700 mb-1">全部数据</h4>
+              <p class="text-xs text-gray-400 mb-3">包括伴侣信息、训练记录等</p>
+              <button v-if="!confirmClearAll" @click="confirmClearAll = true"
+                class="w-full py-2.5 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors text-sm">
+                清除所有数据
+              </button>
+              <div v-else class="space-y-2">
+                <p class="text-xs text-red-500 font-medium text-center">⚠️ 确定要清除所有数据吗？此操作不可撤销！</p>
+                <div class="flex gap-2">
+                  <button @click="localStorage.clear(); confirmClearAll = false; showPrivacy = false; location.reload()"
+                    class="flex-1 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors text-sm">
+                    确认清除
+                  </button>
+                  <button @click="confirmClearAll = false"
+                    class="flex-1 py-2.5 bg-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                    取消
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+              <h4 class="text-sm font-semibold text-gray-700 mb-1">数据导出</h4>
+              <p class="text-xs text-gray-400 mb-3">将当前数据导出为JSON文件</p>
+              <button @click="const data = {}; Object.keys(localStorage).forEach(k => { if(k.startsWith('yn_')) data[k] = localStorage.getItem(k) }); const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'yn_data_' + new Date().toISOString().slice(0,10) + '.json'; a.click(); URL.revokeObjectURL(url)"
+                class="w-full py-2.5 bg-indigo-50 text-indigo-600 font-medium rounded-lg hover:bg-indigo-100 transition-colors text-sm">
+                导出数据
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 防沉迷设置弹窗 -->
+      <div v-if="showAntiAddiction" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showAntiAddiction = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm max-h-[80vh] flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">⏱️ 防沉迷设置</h3>
+            <button @click="showAntiAddiction = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <div class="flex-1 overflow-auto p-4 space-y-5">
+            <div>
+              <h4 class="text-sm font-semibold text-gray-700 mb-2">每日使用时长限制</h4>
+              <div class="grid grid-cols-4 gap-2">
+                <button v-for="opt in [{l:'1小时',v:1},{l:'2小时',v:2},{l:'3小时',v:3},{l:'无限制',v:0}]" :key="opt.v"
+                  @click="dailyTimeLimit = opt.v"
+                  class="py-2.5 rounded-xl text-sm font-medium transition-colors"
+                  :class="dailyTimeLimit === opt.v ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                  {{ opt.l }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold text-gray-700 mb-2">连续使用提醒</h4>
+              <div class="grid grid-cols-3 gap-2">
+                <button v-for="opt in [{l:'30分钟',v:30},{l:'60分钟',v:60},{l:'关闭',v:0}]" :key="opt.v"
+                  @click="continuousReminder = opt.v"
+                  class="py-2.5 rounded-xl text-sm font-medium transition-colors"
+                  :class="continuousReminder === opt.v ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                  {{ opt.l }}
+                </button>
+              </div>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+              <h4 class="text-sm font-semibold text-gray-700 mb-3">当前设置状态</h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">每日时长限制</span>
+                  <span class="font-medium" :class="dailyTimeLimit ? 'text-indigo-600' : 'text-green-600'">
+                    {{ dailyTimeLimit ? dailyTimeLimit + '小时' : '无限制' }}
+                  </span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">连续使用提醒</span>
+                  <span class="font-medium" :class="continuousReminder ? 'text-indigo-600' : 'text-gray-400'">
+                    {{ continuousReminder ? continuousReminder + '分钟' : '已关闭' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 实名认证弹窗 -->
+      <div v-if="showRealName" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showRealName = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm max-h-[80vh] flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">🪪 实名认证</h3>
+            <button @click="showRealName = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <div class="flex-1 overflow-auto p-4">
+            <div v-if="realNameVerified" class="text-center py-8">
+              <div class="text-5xl mb-3">✅</div>
+              <h4 class="text-lg font-semibold text-green-600 mb-1">已完成实名认证</h4>
+              <p class="text-sm text-gray-500">{{ realNameInfo.name }}（{{ realNameInfo.idCard.slice(0,3) + '****' + realNameInfo.idCard.slice(-4) }}）</p>
+            </div>
+            <div v-else>
+              <div class="bg-amber-50 rounded-xl p-3 mb-4 text-sm text-amber-700">
+                根据相关法规，使用部分功能需完成实名认证
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="text-sm font-medium text-gray-700 mb-1 block">姓名</label>
+                  <input v-model="realNameInput" type="text" placeholder="请输入真实姓名" maxlength="20"
+                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-gray-700 mb-1 block">身份证号</label>
+                  <input v-model="realIdInput" type="text" placeholder="请输入18位身份证号" maxlength="18"
+                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    :class="realIdInput && !/^\d{17}[\dXx]$/.test(realIdInput) ? 'border-red-300 focus:ring-red-300' : ''">
+                  <p v-if="realIdInput && !/^\d{17}[\dXx]$/.test(realIdInput)" class="text-xs text-red-500 mt-1">请输入正确的18位身份证号</p>
+                </div>
+                <button @click="if(realNameInput.trim() && /^\d{17}[\dXx]$/.test(realIdInput)) { realNameVerified = true; realNameInfo = { name: realNameInput.trim(), idCard: realIdInput.toUpperCase() } }"
+                  :disabled="!realNameInput.trim() || !/^\d{17}[\dXx]$/.test(realIdInput)"
+                  class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  提交认证
+                </button>
               </div>
             </div>
           </div>
@@ -1432,6 +1642,18 @@
         const todayTaskCompleted = ref(false)
         const showMembership = ref(false)
         const showGoodnightGuide = ref(false)
+        const showMyImage = ref(false)
+        const showPrivacy = ref(false)
+        const showAntiAddiction = ref(false)
+        const showRealName = ref(false)
+        const myNickname = ref('')
+        const dailyTimeLimit = ref(0)
+        const continuousReminder = ref(30)
+        const confirmClearAll = ref(false)
+        const realNameVerified = ref(false)
+        const realNameInput = ref('')
+        const realIdInput = ref('')
+        const realNameInfo = ref({ name: '', idCard: '' })
 
         const goodnightMessages = [
           '今天辛苦了，好好休息吧。愿你今晚有个甜甜的梦，明天又是充满希望的一天。',
@@ -1635,18 +1857,30 @@
         const showUserProfile = ref(false)
 
         const learningCards = ref([
-          { id: 1, title: '破冰技巧', category: '开场', content: '初次见面时，可以从环境切入话题，比如："这家店的装修很有特色，你之前来过吗？"', tips: ['观察周围环境找话题', '赞美对方的选择', '避免敏感话题'] },
-          { id: 2, title: '积极倾听', category: '倾听', content: '倾听不仅仅是听，还要给出积极反馈，比如点头、眼神交流、适当追问。', tips: ['保持眼神接触', '适时点头回应', '用"嗯"、"我明白了"鼓励对方'] },
-          { id: 3, title: '开放式提问', category: '提问', content: '多用"如何"、"为什么"、"什么"等开放式问题，让对话更深入。', tips: ['避免封闭式问题', '从对方兴趣入手', '层层递进深入话题'] },
-          { id: 4, title: '自我袒露', category: '互动', content: '适当分享自己的故事可以拉近彼此距离，但不要过度暴露隐私。', tips: ['控制分享深度', '观察对方反应', '保持真诚'] },
-          { id: 5, title: '话题延续', category: '对话', content: '当话题即将结束时，可以用"延伸法"延续："说到这个，我想起..."', tips: ['记住关键词', '关联自己的经历', '适时转换话题'] },
-          { id: 6, title: '情绪识别', category: '共情', content: '通过观察对方的表情、语气、肢体语言来判断对方的情绪状态。', tips: ['注意微表情', '倾听语气变化', '观察肢体语言'] },
-          { id: 7, title: '赞美技巧', category: '表达', content: '真诚的赞美可以让人感到愉悦，但要具体而非泛泛而谈。', tips: ['具体描述优点', '赞美努力而非天赋', '避免夸张'] },
-          { id: 8, title: '冷场处理', category: '应变', content: '遇到冷场时，可以主动提出新话题或转换场景。', tips: ['准备几个备用话题', '幽默化解尴尬', '大方承认冷场'] }
+          { id: 1, title: '破冰技巧', category: '沟通技巧', content: '初次见面时，可以从环境切入话题，比如："这家店的装修很有特色，你之前来过吗？"', tips: ['观察周围环境找话题', '赞美对方的选择', '避免敏感话题'] },
+          { id: 2, title: '积极倾听', category: '沟通技巧', content: '倾听不仅仅是听，还要给出积极反馈，比如点头、眼神交流、适当追问。', tips: ['保持眼神接触', '适时点头回应', '用"嗯"、"我明白了"鼓励对方'] },
+          { id: 3, title: '开放式提问', category: '沟通技巧', content: '多用"如何"、"为什么"、"什么"等开放式问题，让对话更深入。', tips: ['避免封闭式问题', '从对方兴趣入手', '层层递进深入话题'] },
+          { id: 4, title: '自我袒露', category: '情感表达', content: '适当分享自己的故事可以拉近彼此距离，但不要过度暴露隐私。', tips: ['控制分享深度', '观察对方反应', '保持真诚'] },
+          { id: 5, title: '情绪识别', category: '情感表达', content: '通过观察对方的表情、语气、肢体语言来判断对方的情绪状态。', tips: ['注意微表情', '倾听语气变化', '观察肢体语言'] },
+          { id: 6, title: '赞美技巧', category: '情感表达', content: '真诚的赞美可以让人感到愉悦，但要具体而非泛泛而谈。', tips: ['具体描述优点', '赞美努力而非天赋', '避免夸张'] },
+          { id: 7, title: '话题延续', category: '职场社交', content: '当话题即将结束时，可以用"延伸法"延续："说到这个，我想起..."', tips: ['记住关键词', '关联自己的经历', '适时转换话题'] },
+          { id: 8, title: '冷场处理', category: '职场社交', content: '遇到冷场时，可以主动提出新话题或转换场景。', tips: ['准备几个备用话题', '幽默化解尴尬', '大方承认冷场'] }
         ])
 
         const collectedCards = ref([])
         const showCards = ref(false)
+        const cardFilter = ref('全部')
+        const cardCategories = ['全部', '沟通技巧', '情感表达', '职场社交']
+        const expandedCardId = ref(null)
+
+        const filteredCards = computed(() => {
+          if (cardFilter.value === '全部') return learningCards.value
+          return learningCards.value.filter(c => c.category === cardFilter.value)
+        })
+
+        const toggleExpandCard = (cardId) => {
+          expandedCardId.value = expandedCardId.value === cardId ? null : cardId
+        }
 
         const collectCard = (card) => {
           if (!collectedCards.value.find(c => c.id === card.id)) {
@@ -1654,7 +1888,13 @@
             if (user.value.phone) {
               localStorage.setItem('yn_cards_' + user.value.phone, JSON.stringify(collectedCards.value))
             }
-            alert(`📚 已收藏学习卡片：${card.title}`)
+          }
+        }
+
+        const removeCollectCard = (cardId) => {
+          collectedCards.value = collectedCards.value.filter(c => c.id !== cardId)
+          if (user.value.phone) {
+            localStorage.setItem('yn_cards_' + user.value.phone, JSON.stringify(collectedCards.value))
           }
         }
 
@@ -1669,8 +1909,10 @@
           }
 
           timeRewindTickets.value--
+          hasUsedTimeRewind.value = true
           if (user.value.phone) {
             localStorage.setItem('yn_tickets_' + user.value.phone, timeRewindTickets.value.toString())
+            localStorage.setItem('yn_usedRewind_' + user.value.phone, 'true')
           }
 
           currentRoundIndex.value = Math.max(0, currentRoundIndex.value - 1)
@@ -1799,17 +2041,21 @@
           { id: 4, icon: '🌟', name: '社交之星' }
         ])
 
+        const unlockedMilestones = ref([1])
+
         const milestones = computed(() => {
           const completedScenes = trainingScenes.value.filter(s => s.completed).length
+          const stage1AllCompleted = trainingScenes.value.filter(s => s.stage === 1).length > 0 && trainingScenes.value.filter(s => s.stage === 1).every(s => s.completed)
+          const allAbilitiesHigh = Object.values(abilityStats.value).every(v => v >= 70)
           return [
-            { id: 1, icon: '🌱', title: '初次见面', description: '完成第一次社交场景训练', condition: '完成1次训练', unlocked: completedScenes >= 1 },
-            { id: 2, icon: '💬', title: '沟通入门', description: '完成所有阶段1场景训练', condition: '完成阶段1全部场景', unlocked: trainingScenes.value.filter(s => s.stage === 1 && s.completed).length >= 3 },
-            { id: 3, icon: '❤️', title: '建立好感', description: '好感度达到100', condition: '好感度 >= 100', unlocked: affection.value >= 100 },
-            { id: 4, icon: '📝', title: '情绪记录者', description: '生成5篇情绪日记', condition: '生成5篇日记', unlocked: emotionDiaries.value.length >= 5 },
-            { id: 5, icon: '🌟', title: '社交达人', description: '完成所有场景训练', condition: '完成全部场景', unlocked: completedScenes >= 9 },
-            { id: 6, icon: '💯', title: '完美伴侣', description: '好感度达到1000', condition: '好感度 >= 1000', unlocked: affection.value >= 1000 },
-            { id: 7, icon: '🔥', title: '持之以恒', description: '连续签到7天', condition: '连签7天', unlocked: checkinStreak.value >= 7 },
-            { id: 8, icon: '🎓', title: '知识渊博', description: '收藏全部学习卡片', condition: '收藏8张卡片', unlocked: collectedCards.value.length >= 8 }
+            { id: 1, icon: '🌱', title: '初次见面', description: '开启社交训练之旅', condition: '默认解锁', unlocked: unlockedMilestones.value.includes(1) },
+            { id: 2, icon: '💬', title: '沟通入门', description: '完成所有阶段1场景训练', condition: '完成阶段1全部场景', unlocked: unlockedMilestones.value.includes(2) || stage1AllCompleted },
+            { id: 3, icon: '❤️', title: '建立好感', description: '与伙伴建立良好关系', condition: '好感度 ≥ 50', unlocked: unlockedMilestones.value.includes(3) || affection.value >= 50 },
+            { id: 4, icon: '🌟', title: '社交达人', description: '完成多次社交训练', condition: '完成5次训练', unlocked: unlockedMilestones.value.includes(4) || completedScenes >= 5 },
+            { id: 5, icon: '🤝', title: '共情高手', description: '共情能力显著提升', condition: '共情力 ≥ 60%', unlocked: unlockedMilestones.value.includes(5) || abilityStats.value.empathy >= 60 },
+            { id: 6, icon: '💕', title: '亲密伙伴', description: '与伙伴关系极为亲密', condition: '好感度 ≥ 200', unlocked: unlockedMilestones.value.includes(6) || affection.value >= 200 },
+            { id: 7, icon: '⏳', title: '时空旅者', description: '体验过时空穿梭功能', condition: '使用过时空穿梭', unlocked: unlockedMilestones.value.includes(7) || hasUsedTimeRewind.value },
+            { id: 8, icon: '🎓', title: '全能之星', description: '所有能力全面提升', condition: '所有能力 ≥ 70%', unlocked: unlockedMilestones.value.includes(8) || allAbilitiesHigh }
           ]
         })
 
@@ -1832,8 +2078,13 @@
           if (savedMoments) { partnerMoments.value = JSON.parse(savedMoments) }
           const savedCards = localStorage.getItem('yn_cards_' + phone)
           if (savedCards) { collectedCards.value = JSON.parse(savedCards) }
+          const savedUsedRewind = localStorage.getItem('yn_usedRewind_' + phone)
+          if (savedUsedRewind === 'true') { hasUsedTimeRewind.value = true }
+          const savedMilestones = localStorage.getItem('yn_milestones_' + phone)
+          if (savedMilestones) { unlockedMilestones.value = JSON.parse(savedMilestones) }
           updateWeeklyReport()
           generateDailyMoment()
+          checkSceneUnlocks()
         }
 
         const saveUserDataFunc = () => {
@@ -1866,8 +2117,10 @@
         }
 
         const fillDemoAccount = () => {
+          loginMode.value = 'password'
           phoneNumber.value = '13800138000'
           loginPassword.value = '123456'
+          loginError.value = ''
         }
 
         const doLogin = () => {
@@ -1924,6 +2177,7 @@
         }
 
         const timeRewindTickets = ref(3)
+        const hasUsedTimeRewind = ref(false)
 
         const doCheckin = () => {
           if (checkedInToday.value) return
@@ -2364,6 +2618,45 @@
               }
             }
           })
+
+          // 里程碑解锁检查
+          const completedScenes = trainingScenes.value.filter(s => s.completed).length
+          const stage1AllCompleted = trainingScenes.value.filter(s => s.stage === 1).length > 0 && trainingScenes.value.filter(s => s.stage === 1).every(s => s.completed)
+
+          // 里程碑1: 初次见面 - 默认解锁（已初始化）
+          // 里程碑2: 沟通入门 - 完成阶段1全部场景
+          if (stage1AllCompleted && !unlockedMilestones.value.includes(2)) {
+            unlockedMilestones.value.push(2)
+          }
+          // 里程碑3: 建立好感 - 好感度≥50
+          if (affection.value >= 50 && !unlockedMilestones.value.includes(3)) {
+            unlockedMilestones.value.push(3)
+          }
+          // 里程碑4: 社交达人 - 完成5次训练
+          if (completedScenes >= 5 && !unlockedMilestones.value.includes(4)) {
+            unlockedMilestones.value.push(4)
+          }
+          // 里程碑5: 共情高手 - 共情力≥60%
+          if (abilityStats.value.empathy >= 60 && !unlockedMilestones.value.includes(5)) {
+            unlockedMilestones.value.push(5)
+          }
+          // 里程碑6: 亲密伙伴 - 好感度≥200
+          if (affection.value >= 200 && !unlockedMilestones.value.includes(6)) {
+            unlockedMilestones.value.push(6)
+          }
+          // 里程碑7: 时空旅者 - 使用过时空穿梭
+          if (hasUsedTimeRewind.value && !unlockedMilestones.value.includes(7)) {
+            unlockedMilestones.value.push(7)
+          }
+          // 里程碑8: 全能之星 - 所有能力≥70%
+          if (Object.values(abilityStats.value).every(v => v >= 70) && !unlockedMilestones.value.includes(8)) {
+            unlockedMilestones.value.push(8)
+          }
+
+          // 持久化已解锁里程碑
+          if (user.value.phone) {
+            localStorage.setItem('yn_milestones_' + user.value.phone, JSON.stringify(unlockedMilestones.value))
+          }
         }
 
         const updateWeeklyReport = () => {
@@ -2404,7 +2697,7 @@
           registerError, loginMode, showLoginPwd, showRegPwd, showRegConfirmPwd,
           smsCode, smsCountdown, regSmsCode, regSmsCountdown, rememberMe, agreeTerms,
           user, partners, selectedPartner, showCreatePartner, selectedAvatar, partnerName,
-          selectedType, affection, checkedInToday, checkinStreak, giftCoins, timeRewindTickets,
+          selectedType, affection, checkedInToday, checkinStreak, giftCoins, timeRewindTickets, hasUsedTimeRewind,
           showChat, chatInput, chatMessages, showUserProfile,
           currentTraining, trainingMessages, trainingScore, affectionGain, trainingFinished,
           trainingFeedback, showTrainingOptions, currentRoundIndex, trainingChoices, showTrainingReport,
@@ -2420,10 +2713,15 @@
           sendGift, startTraining, selectTrainingOption, copyInviteCode, logout,
           showRoundOptions, finishTraining, generateTrainingReport, generateEmotionDiary, checkSceneUnlocks, updateWeeklyReport,
           generateDailyMoment, likeMoment, addComment, revealPreference, checkRelationshipCrisis, resolveCrisis,
-          performTalent, learningCards, collectedCards, showCards, collectCard, useTimeRewind,
+          performTalent, learningCards, collectedCards, showCards, collectCard, removeCollectCard, useTimeRewind,
+          cardFilter, cardCategories, expandedCardId, filteredCards, toggleExpandCard,
+          unlockedMilestones,
           milestones, goodnightContent, isPlaying, affectionGainToday, tomorrowEncouragement, playGoodnightAudio,
           showMembership, progressDays, progressData, averageImprovement, radarPoints, showGoodnightGuide,
-          partnerMessageType, partnerMessage, partnerMessageDate, regeneratePartnerMessage
+          partnerMessageType, partnerMessage, partnerMessageDate, regeneratePartnerMessage,
+          showMyImage, showPrivacy, showAntiAddiction, showRealName,
+          myNickname, dailyTimeLimit, continuousReminder, confirmClearAll,
+          realNameVerified, realNameInput, realIdInput, realNameInfo
         }
       }
     }).mount('#app')
