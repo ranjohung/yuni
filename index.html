@@ -627,7 +627,7 @@
           </div>
           <div class="bg-white rounded-xl p-4">
             <div class="flex items-start gap-3">
-              <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-lg">{{ partner.name?.charAt(0) || '👤' }}</div>
+              <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-lg">{{ partner?.name?.charAt(0) || '👤' }}</div>
               <div>
                 <p class="text-sm text-gray-700">{{ partnerMessage }}</p>
                 <div class="flex items-center gap-2 mt-2">
@@ -1108,7 +1108,7 @@
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 text-center">
           <div class="text-4xl mb-4">🌙</div>
           <h3 class="text-lg font-bold text-gray-800 mb-2">今晚想听TA说晚安吗？</h3>
-          <p class="text-sm text-gray-500 mb-6">训练辛苦了，让{{ partner.name }}陪你放松一下吧</p>
+          <p class="text-sm text-gray-500 mb-6">训练辛苦了，让{{ partner?.name || 'TA' }}陪你放松一下吧</p>
           <div class="flex gap-3">
             <button @click="showGoodnightGuide = false; showGoodnight = true" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all">
               听TA说晚安
