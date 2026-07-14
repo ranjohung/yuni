@@ -280,6 +280,8 @@
             </div>
             <div class="flex items-center gap-2">
               <button @click="showChat = true; selectedPartner = p" class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 hover:bg-indigo-200">💬</button>
+              <button @click="showMoments = true" class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 hover:bg-green-200">📱</button>
+              <button @click="showPartnerProfile = true; selectedPartner = p" class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 hover:bg-purple-200">📋</button>
               <button @click="deletePartner(p.id)" v-if="partners.length > 1" class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-500 hover:bg-red-200">🗑️</button>
             </div>
           </div>
@@ -296,30 +298,96 @@
 
       <div v-else-if="currentTab === 'training'" class="flex-1 overflow-auto px-4 py-6">
         <h1 class="text-xl font-bold text-gray-800 mb-6">社交场景训练</h1>
-        <div class="space-y-3">
-          <div v-for="scene in trainingScenes" :key="scene.id" class="bg-white rounded-xl p-4 shadow-sm">
-            <div class="flex items-start gap-3">
-              <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-xl">{{ scene.icon }}</div>
-              <div class="flex-1">
-                <h3 class="font-semibold text-gray-800">{{ scene.name }}</h3>
-                <p class="text-sm text-gray-500 mt-1">{{ scene.description }}</p>
+
+        <div v-for="stage in [1, 2, 3]" :key="stage" class="mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded">阶段{{ stage }}</span>
+            <span class="text-sm text-gray-600">{{ ['破冰期', '接触期', '熟悉期'][stage-1] }}</span>
+          </div>
+          <div class="space-y-3">
+            <div v-for="scene in trainingScenes.filter(s => s.stage === stage)" :key="scene.id" class="bg-white rounded-xl p-4 shadow-sm">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" :class="scene.unlocked ? 'bg-indigo-100' : 'bg-gray-100'">{{ scene.icon }}</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-semibold text-gray-800">{{ scene.name }}</h3>
+                    <span v-if="scene.completed" class="px-1.5 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">✓ 已完成</span>
+                  </div>
+                  <p class="text-sm text-gray-500 mt-0.5">{{ scene.description }}</p>
+                  <div class="flex items-center gap-3 mt-2">
+                    <span class="flex items-center gap-1 text-xs text-gray-400">
+                      <span>⭐</span>{{ scene.difficulty }}
+                    </span>
+                    <span class="text-xs text-gray-400">{{ scene.duration }}</span>
+                    <span v-if="!scene.unlocked" class="text-xs text-orange-500">🔒 需{{ scene.unlockedAt }}好感度</span>
+                  </div>
+                </div>
               </div>
+              <button @click="startTraining(scene)" :disabled="!scene.unlocked"
+                class="mt-3 w-full py-2 text-sm font-medium rounded-lg transition-all"
+                :class="scene.unlocked ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+                {{ scene.completed ? '再次训练' : '开始训练' }}
+              </button>
             </div>
-            <button @click="startTraining(scene)" class="mt-3 w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all">
-              {{ scene.unlocked ? '开始训练' : '🔒 好感度 ' + scene.unlockedAt + ' 解锁' }}
-            </button>
           </div>
         </div>
       </div>
 
       <div v-else-if="currentTab === 'growth'" class="flex-1 overflow-auto px-4 py-6">
         <h1 class="text-xl font-bold text-gray-800 mb-6">成长报告</h1>
+
         <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <h3 class="text-sm font-semibold text-gray-800 mb-4">能力雷达</h3>
           <canvas id="abilityChart" height="200"></canvas>
         </div>
+
+        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 text-white mb-4">
+          <h3 class="text-sm font-semibold mb-3">📋 本周社交报告</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-2xl font-bold">{{ weeklyReport.trainingCount }}</div>
+              <div class="text-xs opacity-80">本周训练次数</div>
+            </div>
+            <div>
+              <div class="text-2xl font-bold">{{ weeklyReport.affectionChange > 0 ? '+' : '' }}{{ weeklyReport.affectionChange }}</div>
+              <div class="text-xs opacity-80">好感度变化</div>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-white/20">
+            <p class="text-xs opacity-90">{{ weeklyReport.message }}</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-gray-800">📖 情绪日记</h3>
+            <span class="text-xs text-gray-400">{{ emotionDiaries.length }}篇</span>
+          </div>
+          <div v-if="emotionDiaries.length > 0" class="space-y-3">
+            <div v-for="diary in emotionDiaries.slice(0, 5)" :key="diary.id" class="p-3 bg-gray-50 rounded-xl">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-medium text-gray-800">{{ diary.sceneName }}</span>
+                <span class="text-lg">{{ diary.emotionTag }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <span>{{ diary.date }} {{ diary.time }}</span>
+                <span class="text-indigo-500">得分: {{ diary.score }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs mb-1">
+                <span class="text-gray-400">{{ diary.emotionBefore }} →</span>
+                <span :class="diary.score >= 80 ? 'text-green-500' : diary.score >= 60 ? 'text-blue-500' : 'text-orange-500'">{{ diary.emotionAfter }}</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">💡 {{ diary.insight }}</p>
+            </div>
+          </div>
+          <div v-else class="text-center py-6 text-gray-400">
+            <div class="text-4xl mb-2">📝</div>
+            <p class="text-sm">完成训练后自动生成情绪日记</p>
+          </div>
+        </div>
+
         <div class="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 class="text-sm font-semibold text-gray-800 mb-3">成就徽章</h3>
+          <h3 class="text-sm font-semibold text-gray-800 mb-3">🏆 成就徽章</h3>
           <div class="flex flex-wrap gap-3">
             <div v-for="achievement in achievements" :key="achievement.id" class="flex flex-col items-center p-3 bg-gray-50 rounded-xl">
               <span class="text-2xl">{{ achievement.icon }}</span>
@@ -537,43 +605,213 @@
           <div class="flex items-center justify-between p-4 border-b border-gray-100">
             <div>
               <h3 class="font-semibold text-gray-800">{{ currentTraining.name }}</h3>
-              <p class="text-xs text-gray-400">{{ currentTraining.icon }}</p>
+              <p class="text-xs text-gray-400">阶段{{ currentTraining.stage }} · {{ currentTraining.duration }}</p>
             </div>
             <button @click="currentTraining = null" class="text-gray-400 hover:text-gray-600">✕</button>
           </div>
 
           <div class="flex-1 overflow-auto p-4 space-y-3">
-            <div v-for="msg in trainingMessages" :key="msg.id" :class="msg.isUser ? 'flex justify-end' : 'flex justify-start'">
-              <div :class="msg.isUser ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-800'" class="max-w-[90%] px-4 py-2 rounded-xl text-sm">
+            <div v-for="(msg, idx) in trainingMessages" :key="idx" :class="msg.isUser ? 'flex justify-end' : 'flex justify-start'">
+              <div :class="[
+                'max-w-[90%] px-4 py-2 rounded-xl text-sm',
+                msg.isUser ? (msg.quality === 'good' ? 'bg-green-500 text-white' : msg.quality === 'cold' ? 'bg-red-500 text-white' : 'bg-indigo-500 text-white') : 'bg-gray-100 text-gray-800',
+                msg.isFeedback ? 'bg-amber-100 text-amber-700 text-xs px-3 py-1 rounded-lg' : ''
+              ]">
                 {{ msg.content }}
               </div>
             </div>
 
-            <div v-if="showTrainingOptions" class="space-y-2">
-              <button v-for="(option, idx) in currentTraining.options" :key="idx" @click="selectTrainingOption(option)"
-                class="w-full p-3 bg-indigo-50 text-indigo-700 rounded-xl text-sm hover:bg-indigo-100 transition-colors text-left">
-                {{ option.text }}
+            <div v-if="showTrainingOptions && currentTraining.rounds[currentRoundIndex]" class="space-y-2">
+              <button v-for="(option, idx) in currentTraining.rounds[currentRoundIndex].options" :key="idx" @click="selectTrainingOption(option)"
+                class="w-full p-3 rounded-xl text-sm hover:bg-indigo-100 transition-colors text-left border"
+                :class="idx === 0 ? 'bg-green-50 border-green-200 text-green-700' : idx === 1 ? 'bg-gray-50 border-gray-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-700'">
+                <span class="text-xs mr-2">{{ ['A', 'B', 'C'][idx] }}</span>{{ option.text }}
               </button>
             </div>
 
-            <div v-if="trainingFinished" class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-4 text-white">
-              <h4 class="font-semibold text-center mb-2">训练完成！</h4>
-              <p class="text-sm text-center">{{ trainingFeedback }}</p>
-              <div class="flex items-center justify-center gap-6 mt-3">
-                <div>
-                  <div class="text-xl font-bold">{{ trainingScore }}</div>
-                  <div class="text-xs">综合得分</div>
-                </div>
-                <div>
-                  <div class="text-xl font-bold">+{{ affectionGain }}</div>
-                  <div class="text-xs">好感度提升</div>
+            <div v-if="showTrainingReport" class="space-y-4">
+              <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-4 text-white">
+                <h4 class="font-semibold text-center mb-2">🎉 训练完成！</h4>
+                <p class="text-sm text-center mb-3">{{ trainingFeedback }}</p>
+                <div class="flex items-center justify-center gap-6">
+                  <div class="text-center">
+                    <div class="text-2xl font-bold">{{ trainingScore }}</div>
+                    <div class="text-xs opacity-80">综合得分</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-2xl font-bold">+{{ affectionGain }}</div>
+                    <div class="text-xs opacity-80">好感度提升</div>
+                  </div>
                 </div>
               </div>
-              <button @click="currentTraining = null" class="w-full mt-4 py-2 bg-white/20 rounded-lg text-sm hover:bg-white/30 transition-colors">
+
+              <div class="bg-gray-50 rounded-xl p-4">
+                <h5 class="text-sm font-semibold text-gray-800 mb-2">📊 能力变化</h5>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500">共情力</span>
+                    <span class="text-indigo-600">+{{ Math.floor(abilityStats.empathy / 10) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500">表达力</span>
+                    <span class="text-indigo-600">+{{ Math.floor(abilityStats.expression / 10) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500">倾听力</span>
+                    <span class="text-indigo-600">+{{ Math.floor(abilityStats.listening / 10) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500">自信心</span>
+                    <span class="text-indigo-600">+{{ Math.floor(abilityStats.confidence / 10) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-gray-50 rounded-xl p-4">
+                <h5 class="text-sm font-semibold text-gray-800 mb-2">📝 选择回顾</h5>
+                <div v-for="(choice, idx) in trainingChoices" :key="idx" class="flex items-center gap-2 text-xs mb-1">
+                  <span :class="choice.option.quality === 'good' ? 'text-green-500' : choice.option.quality === 'cold' ? 'text-red-500' : 'text-gray-400'">
+                    {{ choice.option.quality === 'good' ? '✅' : choice.option.quality === 'cold' ? '❌' : '⚪' }}
+                  </span>
+                  <span class="text-gray-600">第{{ choice.round }}轮</span>
+                  <span class="text-gray-400 truncate">{{ choice.option.text }}</span>
+                </div>
+              </div>
+
+              <button @click="currentTraining = null" class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all">
                 返回训练列表
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div v-if="showMoments && partner" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showMoments = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm h-[70vh] flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">{{ partner.avatar }}</span>
+              <div>
+                <h3 class="font-semibold text-gray-800">{{ partner.name }}的朋友圈</h3>
+                <p class="text-xs text-gray-400">{{ partnerMoments.length }}条动态</p>
+              </div>
+            </div>
+            <button @click="showMoments = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+
+          <div class="flex-1 overflow-auto p-4 space-y-4">
+            <div v-for="moment in partnerMoments" :key="moment.id" class="bg-gray-50 rounded-xl p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">{{ moment.icon }}</span>
+                <span class="text-xs text-gray-400">{{ moment.date }} {{ moment.time }}</span>
+              </div>
+              <p class="text-sm text-gray-800 mb-3">{{ moment.content }}</p>
+              <div class="flex items-center gap-4">
+                <button @click="likeMoment(moment)" :class="moment.liked ? 'text-red-500' : 'text-gray-400'" class="flex items-center gap-1 text-xs">
+                  <span>{{ moment.liked ? '❤️' : '🤍' }}</span>
+                  <span>{{ moment.likes }}</span>
+                </button>
+                <button class="flex items-center gap-1 text-xs text-gray-400">
+                  <span>💬</span>
+                  <span>{{ moment.comments.length }}</span>
+                </button>
+              </div>
+
+              <div v-if="moment.comments.length > 0" class="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                <div v-for="comment in moment.comments" :key="comment.id" :class="comment.isUser ? 'flex justify-end' : 'flex justify-start'">
+                  <div :class="comment.isUser ? 'bg-indigo-500 text-white' : 'bg-white text-gray-800'" class="max-w-[70%] px-3 py-1.5 rounded-lg text-xs">
+                    {{ comment.content }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3 flex gap-2">
+                <input v-model="momentCommentInput" type="text" placeholder="评论..." @keyup.enter="addComment(moment)"
+                  class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                <button @click="addComment(moment)" class="px-3 py-2 bg-indigo-500 text-white text-xs rounded-lg hover:bg-indigo-600">发送</button>
+              </div>
+            </div>
+
+            <div v-if="partnerMoments.length === 0" class="text-center py-12 text-gray-400">
+              <div class="text-4xl mb-2">📱</div>
+              <p class="text-sm">还没有动态</p>
+              <p class="text-xs mt-1">伴侣会每天分享生活点滴</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="showPartnerProfile && partner" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showPartnerProfile = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-bold text-gray-800">📋 伴侣档案</h2>
+            <button @click="showPartnerProfile = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+
+          <div class="flex items-center gap-4 mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
+            <span class="text-4xl">{{ partner.avatar }}</span>
+            <div>
+              <h3 class="font-semibold text-gray-800">{{ partner.name }}</h3>
+              <p class="text-sm text-gray-500">{{ partner.coreType }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <div class="flex-1 max-w-[120px] h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" :style="{ width: (partner.affection / 10) + '%' }"></div>
+                </div>
+                <span class="text-xs text-gray-500">好感度 {{ partner.affection }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-semibold text-gray-800 mb-3">💡 已发现的喜好</h4>
+            <div v-if="partner.preferences && partner.preferences.length > 0" class="grid grid-cols-2 gap-2">
+              <div v-for="pref in partner.preferences" :key="pref.category" class="p-3 bg-gray-50 rounded-xl">
+                <div class="text-xs text-gray-500">{{ pref.category }}</div>
+                <div class="text-sm text-gray-800 font-medium">{{ pref.detail }}</div>
+              </div>
+            </div>
+            <div v-else class="text-center py-4 text-gray-400">
+              <p class="text-sm">还没有发现喜好</p>
+              <p class="text-xs mt-1">提升好感度会逐渐发现更多</p>
+            </div>
+          </div>
+
+          <div class="mt-4 p-3 bg-amber-50 rounded-xl">
+            <p class="text-xs text-amber-700">
+              💡 好感度达到100/300/600/1000时，会逐渐透露更多伴侣喜好
+            </p>
+          </div>
+
+          <button @click="showPartnerProfile = false" class="w-full mt-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl">关闭</button>
+        </div>
+      </div>
+
+      <div v-if="showCrisisAlert && partner" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="resolveCrisis">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6">
+          <div class="text-center mb-6">
+            <div v-if="crisisStatus === 'dormant'" class="text-6xl mb-4">😴</div>
+            <div v-else class="text-6xl mb-4">😢</div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">
+              {{ crisisStatus === 'dormant' ? '关系休眠' : '关系危机' }}
+            </h2>
+            <p class="text-sm text-gray-500">
+              {{ crisisStatus === 'dormant'
+                ? '你已经很久没有来看TA了... TA已经进入休眠状态'
+                : '你已经7天没有来看TA了，TA很想念你'
+              }}
+            </p>
+          </div>
+
+          <div class="bg-red-50 rounded-xl p-4 mb-6">
+            <p class="text-sm text-red-600 text-center">
+              好感度下降了 <span class="font-bold">{{ crisisStatus === 'dormant' ? '很多' : '一些' }}</span>，
+              {{ crisisStatus === 'dormant' ? '需要重新唤醒TA' : '快和TA互动来恢复吧' }}
+            </p>
+          </div>
+
+          <button @click="resolveCrisis" class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all">
+            {{ crisisStatus === 'dormant' ? '唤醒TA' : '去陪伴TA' }}
+          </button>
         </div>
       </div>
     </div>
@@ -631,11 +869,93 @@
         const trainingFinished = ref(false)
         const trainingFeedback = ref('')
         const showTrainingOptions = ref(false)
+        const currentRoundIndex = ref(0)
+        const trainingChoices = ref([])
+        const showTrainingReport = ref(false)
 
         const trainingScenes = ref([
-          { id: 1, icon: '💼', name: '职场沟通', description: '学习如何在工作场合进行有效的沟通', options: [{ text: '主动倾听同事的需求，然后提出建议' }, { text: '直接表达自己的观点，坚持立场' }], unlocked: true, unlockedAt: 0 },
-          { id: 2, icon: '💑', name: '亲密关系', description: '提升与伴侣之间的沟通质量', options: [{ text: '先表达理解，再分享感受' }, { text: '直接说出自己的不满' }], unlocked: false, unlockedAt: 100 },
-          { id: 3, icon: '👨‍👩‍👧', name: '家庭沟通', description: '改善与家人的交流方式', options: [{ text: '尊重长辈的意见，温和表达自己' }, { text: '坚持自己的观点，说服家人' }], unlocked: false, unlockedAt: 200 }
+          { id: 1, icon: '☕', name: '咖啡厅破冰', description: '在咖啡厅与陌生人初次见面', stage: 1, difficulty: 1, duration: '8min', rounds: [
+            { aiScript: '这家店的拿铁很出名，你平时喜欢喝什么？', options: [
+              { text: '我更喜欢美式', quality: 'safe', affection: 3 },
+              { text: '你推荐的这个听起来不错，我试试', quality: 'good', affection: 8 },
+              { text: '我不喝咖啡', quality: 'cold', affection: -2 }
+            ]},
+            { aiScript: '周末一般怎么过？', options: [
+              { text: '宅家休息', quality: 'safe', affection: 3 },
+              { text: '最近在学做咖啡，还挺有意思的', quality: 'good', affection: 8 },
+              { text: '没什么', quality: 'cold', affection: -2 }
+            ]},
+            { aiScript: '我最近在看一本书，特别有意思...', options: [
+              { text: '什么书？', quality: 'good', affection: 8 },
+              { text: '是吗', quality: 'safe', affection: 2 },
+              { text: '哦', quality: 'cold', affection: -3 }
+            ]}
+          ], unlocked: true, unlockedAt: 0, completed: false },
+          { id: 2, icon: '🎤', name: '兴趣社群自我介绍', description: '在兴趣社群中做自我介绍', stage: 1, difficulty: 2, duration: '10min', rounds: [
+            { aiScript: '欢迎加入我们！大家都在自我介绍，你也来说说吧~', options: [
+              { text: '大家好，我是新来的，请多多指教', quality: 'safe', affection: 3 },
+              { text: '大家好！我叫小雨，平时喜欢摄影和旅行，很高兴认识大家', quality: 'good', affection: 8 },
+              { text: '嗨', quality: 'cold', affection: -2 }
+            ]},
+            { aiScript: '你最喜欢的摄影题材是什么？', options: [
+              { text: '风景吧', quality: 'safe', affection: 3 },
+              { text: '我喜欢拍人物，尤其是街头抓拍，能捕捉到很多真实的瞬间', quality: 'good', affection: 8 },
+              { text: '随便拍拍', quality: 'cold', affection: -2 }
+            ]}
+          ], unlocked: false, unlockedAt: 50, completed: false },
+          { id: 3, icon: '💼', name: '模拟面试', description: '模拟求职面试场景', stage: 2, difficulty: 3, duration: '15min', rounds: [
+            { aiScript: '请先做个自我介绍', options: [
+              { text: '我叫张三，毕业两年', quality: 'cold', affection: -2 },
+              { text: '面试官您好，我叫张三，毕业于XX大学，有两年产品经理经验，之前负责过XX产品，带领团队完成了XX目标', quality: 'good', affection: 10 },
+              { text: '我做过一些项目', quality: 'safe', affection: 3 }
+            ]},
+            { aiScript: '为什么从上一家公司离职？', options: [
+              { text: '公司太坑了', quality: 'cold', affection: -5 },
+              { text: '上一家公司的业务方向发生了调整，我希望能找到更符合自己职业发展的机会', quality: 'good', affection: 8 },
+              { text: '想换个环境', quality: 'safe', affection: 3 }
+            ]},
+            { aiScript: '你的缺点是什么？', options: [
+              { text: '没有缺点', quality: 'cold', affection: -3 },
+              { text: '我有时候会追求完美，导致项目进度变慢，但我正在学习如何平衡质量和效率', quality: 'good', affection: 8 },
+              { text: '我比较内向', quality: 'safe', affection: 3 }
+            ]}
+          ], unlocked: false, unlockedAt: 100, completed: false },
+          { id: 4, icon: '📊', name: '向上汇报被质疑', description: '向领导汇报工作时被质疑', stage: 2, difficulty: 4, duration: '12min', rounds: [
+            { aiScript: '这个方案的数据支撑不够充分，你怎么解释？', options: [
+              { text: '数据就是这样的', quality: 'cold', affection: -5 },
+              { text: '您说得对，这部分数据我确实需要补充。我会在本周内收集更多样本数据，确保方案的可靠性', quality: 'good', affection: 10 },
+              { text: '我觉得数据已经够了', quality: 'safe', affection: 2 }
+            ]},
+            { aiScript: '这个预算是不是偏高了？', options: [
+              { text: '不多啊', quality: 'cold', affection: -3 },
+              { text: '这个预算包含了XX和XX两部分，其中XX是必要支出，XX是为了应对可能出现的风险。如果您觉得整体偏高，我可以调整XX部分', quality: 'good', affection: 8 },
+              { text: '这是市场行情', quality: 'safe', affection: 3 }
+            ]}
+          ], unlocked: false, unlockedAt: 150, completed: false },
+          { id: 5, icon: '💔', name: '被朋友误解(NVC)', description: '用非暴力沟通化解误会', stage: 3, difficulty: 3, duration: '10min', rounds: [
+            { aiScript: '你上次为什么没来聚会？大家都很失望', options: [
+              { text: '我有事啊', quality: 'cold', affection: -3 },
+              { text: '对不起让大家失望了，那天我突然身体不舒服实在去不了，下次我一定到', quality: 'good', affection: 8 },
+              { text: '我忘了', quality: 'safe', affection: 2 }
+            ]},
+            { aiScript: '可是你连消息都不回', options: [
+              { text: '我没看到', quality: 'cold', affection: -3 },
+              { text: '我理解你的感受，那天太难受了就直接睡了，确实应该跟大家说一声的，对不起', quality: 'good', affection: 10 },
+              { text: '下次不会了', quality: 'safe', affection: 3 }
+            ]}
+          ], unlocked: false, unlockedAt: 200, completed: false },
+          { id: 6, icon: '🤗', name: '安慰失落的TA', description: '安慰情绪低落的朋友', stage: 3, difficulty: 2, duration: '8min', rounds: [
+            { aiScript: '我今天被老板骂了，感觉自己什么都做不好...', options: [
+              { text: '别难过了', quality: 'safe', affection: 3 },
+              { text: '听起来你今天真的很难过，被骂的感觉一定很委屈吧。你愿意跟我说说发生了什么吗？', quality: 'good', affection: 10 },
+              { text: '老板也是为你好', quality: 'cold', affection: -2 }
+            ]},
+            { aiScript: '我觉得自己能力不够...', options: [
+              { text: '你别想太多', quality: 'cold', affection: -2 },
+              { text: '我不这么觉得。你平时工作很努力，这次可能只是运气不好或者沟通出了问题。每个人都会遇到挫折的，重要的是怎么从中学习', quality: 'good', affection: 8 },
+              { text: '加油', quality: 'safe', affection: 3 }
+            ]}
+          ], unlocked: false, unlockedAt: 250, completed: false }
         ])
 
         const gifts = ref([
@@ -673,6 +993,12 @@
           if (savedCoins) { giftCoins.value = parseInt(savedCoins) }
           const savedAffection = localStorage.getItem('yn_affection_' + phone)
           if (savedAffection) { affection.value = parseInt(savedAffection) }
+          const savedDiaries = localStorage.getItem('yn_diaries_' + phone)
+          if (savedDiaries) { emotionDiaries.value = JSON.parse(savedDiaries) }
+          const savedMoments = localStorage.getItem('yn_moments_' + phone)
+          if (savedMoments) { partnerMoments.value = JSON.parse(savedMoments) }
+          updateWeeklyReport()
+          generateDailyMoment()
         }
 
         const saveUserDataFunc = () => {
@@ -730,6 +1056,10 @@
             loadUserData(phoneNumber.value)
             loadPartners(phoneNumber.value)
             if (rememberMe.value) { localStorage.setItem('yn_loggedIn', 'true'); localStorage.setItem('yn_phone', phoneNumber.value) }
+            setTimeout(() => {
+              checkRelationshipCrisis()
+              revealPreference()
+            }, 500)
           } else {
             if (!smsCode.value) { loginError.value = '请输入验证码'; return }
             if (smsCode.value !== '123456') { loginError.value = '验证码错误'; return }
@@ -739,6 +1069,10 @@
             loggedIn.value = true
             loadUserData(phoneNumber.value)
             loadPartners(phoneNumber.value)
+            setTimeout(() => {
+              checkRelationshipCrisis()
+              revealPreference()
+            }, 500)
           }
         }
 
@@ -805,17 +1139,388 @@
           trainingFinished.value = false
           trainingFeedback.value = ''
           showTrainingOptions.value = false
-          setTimeout(() => { trainingMessages.value.push({ content: scene.description, isUser: false }); setTimeout(() => { showTrainingOptions.value = true }, 500) }, 500)
+          showTrainingReport.value = false
+          currentRoundIndex.value = 0
+          trainingChoices.value = []
+          setTimeout(() => {
+            trainingMessages.value.push({ content: scene.description, isUser: false })
+            setTimeout(() => {
+              showRoundOptions()
+            }, 800)
+          }, 500)
+        }
+
+        const showRoundOptions = () => {
+          if (!currentTraining.value) return
+          const round = currentTraining.value.rounds[currentRoundIndex.value]
+          if (!round) return
+          trainingMessages.value.push({ content: round.aiScript, isUser: false })
+          setTimeout(() => {
+            showTrainingOptions.value = true
+          }, 800)
         }
 
         const selectTrainingOption = (option) => {
-          trainingMessages.value.push({ content: option.text, isUser: true })
+          if (!currentTraining.value) return
+          trainingMessages.value.push({ content: option.text, isUser: true, quality: option.quality })
+          trainingChoices.value.push({ round: currentRoundIndex.value + 1, option: option })
           showTrainingOptions.value = false
-          setTimeout(() => { trainingMessages.value.push({ content: '你的选择很棒！让我分析一下...', isUser: false }); setTimeout(() => { trainingScore.value = Math.floor(Math.random() * 30) + 70; affectionGain.value = Math.floor(trainingScore.value / 10); trainingFinished.value = true; affection.value = Math.min(1000, affection.value + affectionGain.value); saveAffectionFunc(); trainingFeedback.value = trainingScore.value >= 90 ? '太棒了！你的社交能力很强~' : trainingScore.value >= 60 ? '表现不错！继续加油~' : '别灰心，多练习几次就会越来越好的！' }, 1500) }, 1000)
+
+          const qualityLabels = { 'good': '✅ 高质量', 'safe': '⚪ 安全', 'cold': '❌ 冷场' }
+          setTimeout(() => {
+            trainingMessages.value.push({
+              content: qualityLabels[option.quality] + (option.affection > 0 ? ` +${option.affection}好感度` : ` ${option.affection}好感度`),
+              isUser: false,
+              isFeedback: true
+            })
+
+            currentRoundIndex.value++
+            if (currentRoundIndex.value < currentTraining.value.rounds.length) {
+              setTimeout(() => {
+                showRoundOptions()
+              }, 1200)
+            } else {
+              setTimeout(() => {
+                finishTraining()
+              }, 1200)
+            }
+          }, 800)
+        }
+
+        const finishTraining = () => {
+          if (!currentTraining.value) return
+
+          let totalAffection = 0
+          let goodCount = 0
+          let safeCount = 0
+          let coldCount = 0
+
+          trainingChoices.value.forEach(choice => {
+            totalAffection += choice.option.affection
+            if (choice.option.quality === 'good') goodCount++
+            else if (choice.option.quality === 'safe') safeCount++
+            else coldCount++
+          })
+
+          affectionGain.value = Math.max(10, Math.min(30, totalAffection + Math.floor(Math.random() * 10)))
+          affection.value = Math.min(1000, affection.value + affectionGain.value)
+          saveAffectionFunc()
+
+          const totalRounds = currentTraining.value.rounds.length
+          const qualityScore = (goodCount * 100 + safeCount * 60 + coldCount * 20) / totalRounds
+          trainingScore.value = Math.floor(qualityScore)
+
+          const scene = trainingScenes.value.find(s => s.id === currentTraining.value.id)
+          if (scene) {
+            scene.completed = true
+          }
+
+          generateTrainingReport()
+          generateEmotionDiary()
+          checkSceneUnlocks()
+
+          showTrainingReport.value = true
+          trainingFinished.value = true
+        }
+
+        const generateTrainingReport = () => {
+          const scores = {
+            listening: 0,
+            expression: 0,
+            empathy: 0,
+            confidence: 0,
+            adaptability: 0
+          }
+
+          trainingChoices.value.forEach(choice => {
+            const quality = choice.option.quality
+            if (quality === 'good') {
+              scores.listening += 20
+              scores.expression += 20
+              scores.empathy += 20
+              scores.confidence += 20
+              scores.adaptability += 20
+            } else if (quality === 'safe') {
+              scores.listening += 10
+              scores.expression += 10
+              scores.empathy += 10
+              scores.confidence += 10
+              scores.adaptability += 10
+            }
+          })
+
+          abilityStats.value = {
+            empathy: Math.min(100, abilityStats.value.empathy + Math.floor(scores.empathy / 10)),
+            expression: Math.min(100, abilityStats.value.expression + Math.floor(scores.expression / 10)),
+            listening: Math.min(100, abilityStats.value.listening + Math.floor(scores.listening / 10)),
+            confidence: Math.min(100, abilityStats.value.confidence + Math.floor(scores.confidence / 10)),
+            strategy: Math.min(100, abilityStats.value.strategy + Math.floor(scores.adaptability / 10))
+          }
+
+          if (trainingScore.value >= 90) {
+            trainingFeedback.value = '🎉 太棒了！你的社交能力很强，继续保持！'
+          } else if (trainingScore.value >= 70) {
+            trainingFeedback.value = '👍 表现不错！有些地方还可以做得更好~'
+          } else if (trainingScore.value >= 60) {
+            trainingFeedback.value = '💪 及格了！多练习几次就会越来越好的！'
+          } else {
+            trainingFeedback.value = '📚 别灰心，学习需要过程，再来一次吧！'
+          }
         }
 
         const copyInviteCode = () => {
           navigator.clipboard.writeText(user.value.inviteCode).then(() => { alert('邀请码已复制') })
+        }
+
+        const emotionDiaries = ref([])
+        const weeklyReport = ref({
+          trainingCount: 0,
+          affectionChange: 0,
+          message: '本周还没有训练记录，快去开始你的第一次社交训练吧！'
+        })
+
+        const partnerMoments = ref([])
+        const showMoments = ref(false)
+        const momentCommentInput = ref('')
+
+        const momentTemplates = [
+          { type: 'daily', content: '今天路过一家花店，闻到栀子花的香味', icon: '🌸' },
+          { type: 'work', content: '加班到深夜，看到窗外的月亮', icon: '🌙' },
+          { type: 'mood', content: '今天的风很温柔，像某个人的拥抱', icon: '💨' },
+          { type: 'thought', content: '突然想去一个没去过的地方', icon: '✈️' },
+          { type: 'healing', content: '你值得被温柔对待，包括你自己', icon: '💖' },
+          { type: 'discovery', content: '发现一家藏在巷子里的书店', icon: '📚' },
+          { type: 'rain', content: '雨后的空气有泥土的味道', icon: '🌧️' },
+          { type: 'coffee', content: '坐在常去的咖啡店，老板说今天请我', icon: '☕' },
+          { type: 'reading', content: '读到一段话，想分享给你...', icon: '📖' },
+          { type: 'travel', content: '这张照片是在一个无名小镇拍的', icon: '📸' },
+          { type: 'goodnight', content: '今晚的月亮很圆，晚安', icon: '🌙' },
+          { type: 'morning', content: '今天也是元气满满的一天', icon: '☀️' },
+          { type: 'share', content: '吃到一家超好吃的店，下次一起去', icon: '🍽️' },
+          { type: 'complain', content: '地铁又晚点了', icon: '🚇' },
+          { type: 'warm', content: '刚看到一个小女孩给流浪猫喂食', icon: '🐱' },
+          { type: 'sport', content: '今天跑了5公里', icon: '🏃' },
+          { type: 'happiness', content: '买到最后一个喜欢的面包', icon: '🍞' },
+          { type: 'emo', content: '有的时候，也会觉得孤独', icon: '🌃' },
+          { type: 'cure', content: '难过就抬头看看天空', icon: '☁️' },
+          { type: 'memory', content: '突然想起小时候...', icon: '🎈' },
+          { type: 'growth', content: '做了一件以前不敢做的事', icon: '🌟' },
+          { type: 'thank', content: '谢谢你一直陪着我', icon: '💝' },
+          { type: 'joke', content: '被自己的蠢笑了', icon: '😂' },
+          { type: 'complaint', content: '这周会议也太多了', icon: '📊' },
+          { type: 'scenery', content: '今天的天很好看', icon: '☁️' },
+          { type: 'recommend', content: '推荐一部电影，看完哭了好久', icon: '🎬' },
+          { type: 'challenge', content: '尝试了新菜谱', icon: '👩🍳' },
+          { type: 'talk', content: '今天发生了三件小事...', icon: '💬' },
+          { type: 'goal', content: '立个flag读完两本书', icon: '📚' },
+          { type: 'company', content: '有你在真好', icon: '💞' }
+        ]
+
+        const generateDailyMoment = () => {
+          const today = new Date().toDateString()
+          const hasTodayMoment = partnerMoments.value.some(m => m.date === today)
+          if (hasTodayMoment) return
+
+          const template = momentTemplates[Math.floor(Math.random() * momentTemplates.length)]
+          const newMoment = {
+            id: Date.now(),
+            date: today,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            content: template.content,
+            icon: template.icon,
+            likes: Math.floor(Math.random() * 5) + 1,
+            comments: [],
+            liked: false
+          }
+
+          partnerMoments.value.unshift(newMoment)
+
+          if (user.value.phone) {
+            localStorage.setItem('yn_moments_' + user.value.phone, JSON.stringify(partnerMoments.value))
+          }
+        }
+
+        const likeMoment = (moment) => {
+          moment.liked = !moment.liked
+          moment.likes += moment.liked ? 1 : -1
+          if (user.value.phone) {
+            localStorage.setItem('yn_moments_' + user.value.phone, JSON.stringify(partnerMoments.value))
+          }
+        }
+
+        const addComment = (moment) => {
+          if (!momentCommentInput.value.trim()) return
+
+          moment.comments.push({
+            id: Date.now(),
+            content: momentCommentInput.value,
+            isUser: true
+          })
+
+          setTimeout(() => {
+            const replies = ['谢谢你~', '哈哈，是的呢', '你也这么觉得吗？', '😘', '好开心你能懂我']
+            moment.comments.push({
+              id: Date.now() + 1,
+              content: replies[Math.floor(Math.random() * replies.length)],
+              isUser: false
+            })
+            if (user.value.phone) {
+              localStorage.setItem('yn_moments_' + user.value.phone, JSON.stringify(partnerMoments.value))
+            }
+          }, 1000)
+
+          momentCommentInput.value = ''
+        }
+
+        const showPartnerProfile = ref(false)
+
+        const allPreferences = [
+          { category: '美食', items: ['喜欢吃辣', '喜欢甜食', '喜欢咖啡', '喜欢火锅'] },
+          { category: '音乐', items: ['喜欢民谣', '喜欢摇滚', '喜欢古典', '喜欢流行'] },
+          { category: '旅行', items: ['喜欢海边', '喜欢雪山', '喜欢古镇', '喜欢城市'] },
+          { category: '阅读', items: ['喜欢小说', '喜欢散文', '喜欢心理学', '喜欢科幻'] },
+          { category: '运动', items: ['喜欢跑步', '喜欢瑜伽', '喜欢游泳', '喜欢篮球'] }
+        ]
+
+        const revealPreference = () => {
+          if (!partner.value) return
+
+          let revealCount = 0
+          if (affection.value >= 100) revealCount++
+          if (affection.value >= 300) revealCount++
+          if (affection.value >= 600) revealCount++
+          if (affection.value >= 1000) revealCount = allPreferences.length
+
+          if (!partner.value.preferences) {
+            partner.value.preferences = []
+          }
+
+          const alreadyRevealed = partner.value.preferences.length
+          if (alreadyRevealed >= revealCount) return
+
+          const availableCategories = allPreferences.filter(cat =>
+            !partner.value.preferences.some(p => p.category === cat.category)
+          )
+
+          for (let i = alreadyRevealed; i < revealCount && availableCategories.length > 0; i++) {
+            const randomCat = availableCategories.splice(Math.floor(Math.random() * availableCategories.length), 1)[0]
+            const randomItem = randomCat.items[Math.floor(Math.random() * randomCat.items.length)]
+            partner.value.preferences.push({
+              category: randomCat.category,
+              detail: randomItem,
+              revealedAt: new Date().toLocaleDateString()
+            })
+          }
+
+          savePartnersFunc()
+        }
+
+        const showCrisisAlert = ref(false)
+        const crisisStatus = ref('')
+
+        const checkRelationshipCrisis = () => {
+          if (!user.value.phone) return
+
+          const lastLogin = localStorage.getItem('yn_lastLogin_' + user.value.phone)
+          if (!lastLogin) {
+            localStorage.setItem('yn_lastLogin_' + user.value.phone, Date.now().toString())
+            return
+          }
+
+          const daysSinceLogin = Math.floor((Date.now() - parseInt(lastLogin)) / (1000 * 60 * 60 * 24))
+
+          if (daysSinceLogin >= 30) {
+            crisisStatus.value = 'dormant'
+            showCrisisAlert.value = true
+            affection.value = Math.max(0, affection.value - daysSinceLogin * 5)
+            saveAffectionFunc()
+          } else if (daysSinceLogin >= 7) {
+            crisisStatus.value = 'crisis'
+            showCrisisAlert.value = true
+            affection.value = Math.max(0, affection.value - daysSinceLogin * 5)
+            saveAffectionFunc()
+          }
+
+          localStorage.setItem('yn_lastLogin_' + user.value.phone, Date.now().toString())
+        }
+
+        const resolveCrisis = () => {
+          showCrisisAlert.value = false
+          crisisStatus.value = ''
+          affection.value = Math.min(1000, affection.value + 20)
+          saveAffectionFunc()
+        }
+
+        const generateEmotionDiary = () => {
+          if (!currentTraining.value) return
+
+          const goodCount = trainingChoices.value.filter(c => c.option.quality === 'good').length
+          const total = trainingChoices.value.length
+          const emotionTag = goodCount >= total * 0.7 ? '😊' : goodCount >= total * 0.4 ? '😐' : '😟'
+
+          const diary = {
+            id: Date.now(),
+            date: new Date().toLocaleDateString(),
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            sceneName: currentTraining.value.name,
+            emotionTag: emotionTag,
+            emotionBefore: '紧张',
+            emotionAfter: trainingScore.value >= 80 ? '自信' : trainingScore.value >= 60 ? '平静' : '有点沮丧',
+            keyMoment: trainingChoices.value.length > 0 ? trainingChoices.value[Math.floor(trainingChoices.value.length / 2)].option.text.substring(0, 30) + '...' : '',
+            insight: trainingScore.value >= 80 ? '准备得很充分，表现很棒！' : trainingScore.value >= 60 ? '还需要多练习，熟能生巧' : '别灰心，每一次练习都是成长',
+            score: trainingScore.value
+          }
+
+          emotionDiaries.value.unshift(diary)
+
+          if (user.value.phone) {
+            localStorage.setItem('yn_diaries_' + user.value.phone, JSON.stringify(emotionDiaries.value))
+          }
+        }
+
+        const checkSceneUnlocks = () => {
+          const stages = [1, 2, 3]
+
+          stages.forEach(stage => {
+            const stageScenes = trainingScenes.value.filter(s => s.stage === stage)
+            const allCompleted = stageScenes.every(s => s.completed)
+
+            if (allCompleted) {
+              const nextStage = stage + 1
+              const nextStageScenes = trainingScenes.value.filter(s => s.stage === nextStage)
+              nextStageScenes.forEach(scene => {
+                if (affection.value >= scene.unlockedAt) {
+                  scene.unlocked = true
+                }
+              })
+            }
+          })
+
+          trainingScenes.value.forEach(scene => {
+            if (!scene.unlocked && affection.value >= scene.unlockedAt) {
+              const prevStageScenes = trainingScenes.value.filter(s => s.stage === scene.stage - 1)
+              const prevStageCompleted = prevStageScenes.length === 0 || prevStageScenes.every(s => s.completed)
+              if (prevStageCompleted) {
+                scene.unlocked = true
+              }
+            }
+          })
+        }
+
+        const updateWeeklyReport = () => {
+          const completedScenes = trainingScenes.value.filter(s => s.completed).length
+          weeklyReport.value.trainingCount = completedScenes
+          weeklyReport.value.affectionChange = affection.value - 50
+
+          if (completedScenes >= 5) {
+            weeklyReport.value.message = '🎉 本周训练非常勤奋！你的社交能力正在飞速提升，继续保持！'
+          } else if (completedScenes >= 3) {
+            weeklyReport.value.message = '👍 本周表现不错！坚持训练，你的进步大家都看得到~'
+          } else if (completedScenes >= 1) {
+            weeklyReport.value.message = '💪 迈出了第一步！多练习几次，你会越来越棒的！'
+          } else {
+            weeklyReport.value.message = '📚 本周还没有训练记录，快去开始你的第一次社交训练吧！'
+          }
         }
 
         const logout = () => {
@@ -843,11 +1548,16 @@
           selectedType, affection, checkedInToday, checkinStreak, giftCoins,
           showChat, chatInput, chatMessages, showUserProfile,
           currentTraining, trainingMessages, trainingScore, affectionGain, trainingFinished,
-          trainingFeedback, showTrainingOptions, trainingScenes, gifts, avatars, partnerTypes,
-          abilityStats, achievements, partner,
+          trainingFeedback, showTrainingOptions, currentRoundIndex, trainingChoices, showTrainingReport,
+          trainingScenes, gifts, avatars, partnerTypes,
+          abilityStats, achievements, partner, emotionDiaries, weeklyReport,
+          partnerMoments, showMoments, momentCommentInput,
+          showPartnerProfile, showCrisisAlert, crisisStatus,
           sendSmsCode, sendRegSmsCode, fillDemoAccount, doLogin, doRegister,
           doCheckin, sendMessage, createPartner, deletePartner,
-          sendGift, startTraining, selectTrainingOption, copyInviteCode, logout
+          sendGift, startTraining, selectTrainingOption, copyInviteCode, logout,
+          showRoundOptions, finishTraining, generateTrainingReport, generateEmotionDiary, checkSceneUnlocks, updateWeeklyReport,
+          generateDailyMoment, likeMoment, addComment, revealPreference, checkRelationshipCrisis, resolveCrisis
         }
       }
     }).mount('#app')
