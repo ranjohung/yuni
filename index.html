@@ -330,6 +330,23 @@
               <p class="text-sm text-gray-400 mt-2">点击TA互动</p>
             </div>
             <div class="absolute top-4 right-4 flex items-center gap-2">
+              <div v-if="partners.length > 1" class="relative">
+                <button @click="showPartnerSwitch = !showPartnerSwitch" class="flex items-center gap-1 px-3 py-1.5 bg-white/80 rounded-full text-sm text-gray-700 hover:bg-white transition-colors shadow-sm">
+                  {{ partner.name }} ▾
+                </button>
+                <div v-if="showPartnerSwitch" class="absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 z-20 overflow-hidden">
+                  <div v-for="p in partners" :key="p.id" @click="switchPartner(p)"
+                    class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-colors"
+                    :class="p.id === partner.id ? 'bg-indigo-50' : ''">
+                    <span class="text-2xl">{{ p.avatar }}</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-gray-800 truncate">{{ p.name }}</div>
+                      <div class="text-xs text-gray-400">{{ getAffectionLevelText(p.affection) }} · 好感{{ p.affection }}</div>
+                    </div>
+                    <span v-if="p.id === partner.id" class="text-indigo-500 text-sm">✓</span>
+                  </div>
+                </div>
+              </div>
               <button @click="showCreatePartner = true" class="flex items-center gap-1 px-3 py-1.5 bg-white/80 rounded-full text-sm text-gray-700 hover:bg-white transition-colors shadow-sm">
                 + 添加伴侣
               </button>
@@ -666,7 +683,22 @@
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div v-for="gift in gifts" :key="gift.id" class="bg-white rounded-xl p-4 shadow-sm text-center">
+          <div v-for="gift in gifts" :key="gift.id" class="bg-white rounded-xl p-4 shadow-sm text-center"
+            :class="{
+              'border-2 border-gray-300': gift.level === 1,
+              'border-2 border-blue-400': gift.level === 2,
+              'border-2 border-purple-400': gift.level === 3,
+              'border-2 border-yellow-400': gift.level === 4,
+              'border-2 border-red-400 bg-gradient-to-br from-white to-red-50': gift.level === 5
+            }">
+            <div v-if="gift.memberReq" class="mb-2">
+              <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                :class="{
+                  'bg-purple-100 text-purple-600': gift.level === 3,
+                  'bg-yellow-100 text-yellow-600': gift.level === 4,
+                  'bg-red-100 text-red-600': gift.level === 5
+                }">{{ gift.memberReq }}</span>
+            </div>
             <div class="text-3xl mb-2">{{ gift.icon }}</div>
             <h3 class="font-medium text-gray-800 text-sm">{{ gift.name }}</h3>
             <p class="text-xs text-gray-500 mt-1">{{ gift.description }}</p>
@@ -674,7 +706,14 @@
               <span class="text-xs text-green-500">+{{ gift.affectionGain }} 好感度</span>
             </div>
             <button @click="sendGift(gift)" :disabled="giftCoins < gift.price"
-              class="mt-3 w-full py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+              class="mt-3 w-full py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              :class="{
+                'bg-gray-100 text-gray-700 hover:bg-gray-200': gift.level === 1,
+                'bg-blue-100 text-blue-700 hover:bg-blue-200': gift.level === 2,
+                'bg-purple-100 text-purple-700 hover:bg-purple-200': gift.level === 3,
+                'bg-yellow-100 text-yellow-700 hover:bg-yellow-200': gift.level === 4,
+                'bg-red-100 text-red-700 hover:bg-red-200': gift.level === 5
+              }">
               {{ gift.price }} 金币
             </button>
           </div>
@@ -744,6 +783,17 @@
               </div>
               <span class="text-gray-400">→</span>
             </button>
+
+          <button @click="showPartnerManage = true" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">👥</span>
+              <div>
+                <div class="text-gray-700">角色管理</div>
+                <div class="text-xs text-gray-400">管理伴侣角色（{{ partners.length }}个）</div>
+              </div>
+            </div>
+            <span class="text-gray-400">→</span>
+          </button>
 
           <button @click="showPrivacy = true" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
             <div class="flex items-center gap-3">
@@ -922,6 +972,7 @@
                   class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-400">
                 <button @click="copyInviteCode" class="px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors">复制</button>
               </div>
+              <button @click="showInviteRewards = true" class="mt-2 text-xs text-indigo-500 hover:text-indigo-600 font-medium">🎁 查看邀请奖励规则</button>
             </div>
           </div>
 
@@ -1020,6 +1071,76 @@
           <button @click="showGoodnight = false" class="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all">
             晚安，做个好梦 💤
           </button>
+        </div>
+      </div>
+
+      <div v-if="showPartnerManage" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showPartnerManage = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm max-h-[80vh] flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">👥 角色管理</h3>
+            <button @click="showPartnerManage = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <div class="flex-1 overflow-auto p-4 space-y-3">
+            <div v-for="p in partners" :key="p.id" class="bg-gray-50 rounded-xl p-4"
+              :class="p.id === selectedPartner?.id ? 'ring-2 ring-indigo-400' : ''">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">{{ p.avatar }}</span>
+                <div class="flex-1">
+                  <div class="font-medium text-gray-800">{{ p.name }}</div>
+                  <div class="text-xs text-gray-400 mt-1">{{ getAffectionLevelText(p.affection) }} · 好感度 {{ p.affection }}</div>
+                  <div class="text-xs text-indigo-500 mt-0.5">内核：{{ p.coreType }}</div>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                  <span v-if="p.id === selectedPartner?.id" class="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full">当前</span>
+                  <button v-else @click="switchPartner(p); showPartnerManage = false" class="text-xs px-3 py-1 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors">切换</button>
+                  <button v-if="partners.length > 1" @click="confirmDeletePartnerId = p.id" class="text-xs px-2 py-0.5 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition-colors">删除</button>
+                </div>
+              </div>
+              <div v-if="confirmDeletePartnerId === p.id" class="mt-3 pt-3 border-t border-gray-200">
+                <p class="text-sm text-red-600 mb-2">确认删除角色「{{ p.name }}」？</p>
+                <div class="flex gap-2">
+                  <button @click="deletePartner(p.id); confirmDeletePartnerId = null" class="flex-1 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600">确认删除</button>
+                  <button @click="confirmDeletePartnerId = null" class="flex-1 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">取消</button>
+                </div>
+              </div>
+            </div>
+            <div v-if="partners.length === 0" class="text-center py-8 text-gray-400">暂无角色，请先添加伴侣</div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="showInviteRewards" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showInviteRewards = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">🎁 邀请奖励规则</h3>
+            <button @click="showInviteRewards = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <div class="space-y-4">
+            <div class="bg-indigo-50 rounded-xl p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">🎉</span>
+                <span class="font-medium text-indigo-700">注册成功</span>
+              </div>
+              <p class="text-sm text-indigo-600">邀请人获得 <strong>+3张</strong> 穿梭券</p>
+            </div>
+            <div class="bg-purple-50 rounded-xl p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">🎯</span>
+                <span class="font-medium text-purple-700">完成首次训练</span>
+              </div>
+              <p class="text-sm text-purple-600">邀请人获得 <strong>+5张</strong> 穿梭券</p>
+              <p class="text-sm text-purple-600">被邀请人获得 <strong>+3张</strong> 穿梭券</p>
+            </div>
+            <div class="bg-amber-50 rounded-xl p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">💎</span>
+                <span class="font-medium text-amber-700">购买会员</span>
+              </div>
+              <p class="text-sm text-amber-600">邀请人获得 <strong>+10张</strong> 穿梭券</p>
+              <p class="text-sm text-amber-600">被邀请人获得 <strong>+1张</strong> 体验日卡</p>
+            </div>
+          </div>
+          <button @click="showInviteRewards = false" class="w-full mt-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl">我知道了</button>
         </div>
       </div>
 
@@ -1820,6 +1941,10 @@
         const partners = ref([])
         const selectedPartner = ref(null)
         const showCreatePartner = ref(false)
+        const showPartnerSwitch = ref(false)
+        const showPartnerManage = ref(false)
+        const showInviteRewards = ref(false)
+        const confirmDeletePartnerId = ref(null)
         const selectedAvatar = ref('👩')
         const partnerName = ref('')
         const selectedType = ref({ id: 'empathy', icon: '❤️', label: '同理心', desc: '善解人意' })
@@ -2363,10 +2488,20 @@
         ])
 
         const gifts = ref([
-          { id: 1, icon: '🌹', name: '玫瑰花', description: '浪漫的象征', price: 10, affectionGain: 5 },
-          { id: 2, icon: '🍫', name: '巧克力', description: '甜蜜的礼物', price: 20, affectionGain: 10 },
-          { id: 3, icon: '🎵', name: '音乐盒', description: '美妙的旋律', price: 30, affectionGain: 15 },
-          { id: 4, icon: '💎', name: '钻石', description: '永恒的承诺', price: 100, affectionGain: 50 }
+          // 基础(1级)
+          { id: 1, icon: '🌺', name: '虚拟花', description: '浪漫的象征', price: 5, affectionGain: 2, level: 1, levelName: '基础', memberReq: '' },
+          { id: 2, icon: '💌', name: '手写卡片', description: '真挚的心意', price: 8, affectionGain: 3, level: 1, levelName: '基础', memberReq: '' },
+          // 普通(2级)
+          { id: 3, icon: '🧋', name: '虚拟奶茶', description: '甜蜜的温暖', price: 15, affectionGain: 6, level: 2, levelName: '普通', memberReq: '' },
+          { id: 4, icon: '🍰', name: '甜品', description: '甜蜜的惊喜', price: 20, affectionGain: 8, level: 2, levelName: '普通', memberReq: '' },
+          // 精致(3级)
+          { id: 5, icon: '📿', name: '虚拟项链', description: '精致的心意', price: 50, affectionGain: 20, level: 3, levelName: '精致', memberReq: '周卡+' },
+          { id: 6, icon: '💎', name: '手链', description: '闪耀的约定', price: 60, affectionGain: 25, level: 3, levelName: '精致', memberReq: '周卡+' },
+          // 高级(4级)
+          { id: 7, icon: '💍', name: '虚拟钻戒', description: '永恒的承诺', price: 100, affectionGain: 40, level: 4, levelName: '高级', memberReq: '月卡+' },
+          { id: 8, icon: '✈️', name: '旅行', description: '浪漫的旅程', price: 150, affectionGain: 60, level: 4, levelName: '高级', memberReq: '月卡+' },
+          // 奢华(5级)
+          { id: 9, icon: '👑', name: '专属定制', description: '独一无二的奢华', price: 300, affectionGain: 120, level: 5, levelName: '奢华', memberReq: '年卡专属' }
         ])
 
         const avatars = ['👩', '👨', '👧', '👦', '🧑', '👱', '👸', '🤴']
@@ -2573,6 +2708,21 @@
           if (partners.value.length <= 1) return
           const idx = partners.value.findIndex(p => p.id === partnerId)
           if (idx !== -1) { partners.value.splice(idx, 1); if (selectedPartner.value?.id === partnerId) { selectedPartner.value = partners.value[0] || null } savePartnersFunc() }
+        }
+
+        const switchPartner = (p) => {
+          partners.value.forEach(pt => { pt.isActive = pt.id === p.id })
+          selectedPartner.value = p
+          showPartnerSwitch.value = false
+          savePartnersFunc()
+        }
+
+        const getAffectionLevelText = (aff) => {
+          if (aff >= 800) return '挚爱'
+          if (aff >= 600) return '知己'
+          if (aff >= 400) return '亲密'
+          if (aff >= 200) return '熟悉'
+          return '初识'
         }
 
         const sendGift = (gift) => {
@@ -3067,6 +3217,8 @@
           showMyImage, showPrivacy, showAntiAddiction, showRealName,
           myNickname, dailyTimeLimit, continuousReminder, confirmClearAll,
           realNameVerified, realNameInput, realIdInput, realNameInfo,
+          showPartnerSwitch, showPartnerManage, showInviteRewards, confirmDeletePartnerId,
+          switchPartner, getAffectionLevelText,
           showCBT, currentCBTStep, cbtSituation, cbtThought, cbtEmotions, cbtEmotionIntensity,
           cbtEvidenceFor, cbtEvidenceAgainst, cbtAlternative, cbtEmotionAfter, cbtDetectedDistortions,
           cbtRecords, cbtTab, nextCBTStep, prevCBTStep, detectDistortions, saveCBTRecord,
