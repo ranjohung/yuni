@@ -461,6 +461,33 @@
           <canvas id="abilityChart" height="200"></canvas>
         </div>
 
+        <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-800">📈 进步曲线</h3>
+            <div class="flex bg-gray-100 rounded-lg p-1">
+              <button @click="progressDays = 7" :class="progressDays === 7 ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'" class="px-3 py-1 text-xs rounded-md transition-colors">
+                7天
+              </button>
+              <button @click="progressDays = 30" :class="progressDays === 30 ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'" class="px-3 py-1 text-xs rounded-md transition-colors">
+                30天
+              </button>
+            </div>
+          </div>
+          <div class="h-32 flex items-end gap-2">
+            <div v-for="(day, idx) in progressData" :key="idx" class="flex-1 flex flex-col items-center gap-1">
+              <div class="w-full bg-gradient-to-t from-indigo-500 to-purple-400 rounded-t-md transition-all" :style="{ height: (day.score / 100 * 100) + '%' }"></div>
+              <span class="text-xs text-gray-400">{{ day.label }}</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-4 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 bg-indigo-500 rounded-full"></span>
+              <span class="text-gray-500">综合能力</span>
+            </div>
+            <span class="text-indigo-600">平均提升 +{{ averageImprovement }}%</span>
+          </div>
+        </div>
+
         <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 text-white mb-4">
           <h3 class="text-sm font-semibold mb-3">📋 本周社交报告</h3>
           <div class="grid grid-cols-2 gap-4">
@@ -552,6 +579,34 @@
             </div>
           </div>
         </div>
+
+        <div class="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">💌</span>
+            <h3 class="text-sm font-semibold text-gray-800">伴侣寄语</h3>
+            <span class="text-xs text-gray-400">{{ partnerMessageType === 'weekly' ? '本周' : '本月' }}总结</span>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <button @click="partnerMessageType = 'weekly'" :class="partnerMessageType === 'weekly' ? 'bg-purple-100 text-purple-600' : 'bg-white text-gray-500'" class="px-3 py-1 text-xs rounded-full transition-colors">
+              本周
+            </button>
+            <button @click="partnerMessageType = 'monthly'" :class="partnerMessageType === 'monthly' ? 'bg-purple-100 text-purple-600' : 'bg-white text-gray-500'" class="px-3 py-1 text-xs rounded-full transition-colors">
+              本月
+            </button>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-lg">{{ partner.name?.charAt(0) || '👤' }}</div>
+              <div>
+                <p class="text-sm text-gray-700">{{ partnerMessage }}</p>
+                <div class="flex items-center gap-2 mt-2">
+                  <span class="text-xs text-gray-400">{{ partnerMessageDate }}</span>
+                  <button @click="regeneratePartnerMessage" class="text-xs text-indigo-500 hover:text-indigo-600">换一句</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else-if="currentTab === 'gifts'" class="flex-1 overflow-auto px-4 py-6">
@@ -631,16 +686,16 @@
             <span class="text-gray-400">→</span>
           </button>
 
-          <button class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
-            <div class="flex items-center gap-3">
-              <span class="text-xl">💎</span>
-              <div>
-                <div class="text-gray-700">会员中心</div>
-                <div class="text-xs text-gray-400">升级享受更多特权</div>
+          <button @click="showMembership = true" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="text-xl">💎</span>
+                <div>
+                  <div class="text-gray-700">会员中心</div>
+                  <div class="text-xs text-gray-400">升级享受更多特权</div>
+                </div>
               </div>
-            </div>
-            <span class="text-gray-400">→</span>
-          </button>
+              <span class="text-gray-400">→</span>
+            </button>
 
           <button class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
             <div class="flex items-center gap-3">
@@ -840,6 +895,196 @@
                 + 收藏
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="showGoodnight" class="fixed inset-0 bg-gradient-to-b from-indigo-900 via-purple-900 to-black flex items-center justify-center z-50 p-4">
+        <div class="w-full max-w-sm">
+          <div class="text-center mb-8">
+            <div class="text-6xl mb-4">🌙</div>
+            <h2 class="text-2xl font-bold text-white mb-2">晚安，{{ user.nickname }}</h2>
+            <p class="text-purple-200 text-sm">{{ partner.name }}想对你说...</p>
+          </div>
+
+          <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6">
+            <div class="text-center text-white mb-4">
+              <p class="text-lg leading-relaxed">"{{ goodnightContent }}"</p>
+            </div>
+            <div class="flex items-center justify-center gap-4">
+              <button @click="playGoodnightAudio" class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white hover:bg-purple-600 transition-colors">
+                <span class="text-xl">🔊</span>
+              </button>
+              <span class="text-purple-200 text-sm">{{ isPlaying ? '播放中...' : '点击播放语音' }}</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4">
+              <div class="text-2xl font-bold text-green-400">{{ trainingScenes.filter(s => s.completed).length }}</div>
+              <div class="text-purple-200 text-xs mt-1">今日训练</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4">
+              <div class="text-2xl font-bold text-pink-400">+{{ affectionGainToday }}</div>
+              <div class="text-purple-200 text-xs mt-1">好感度提升</div>
+            </div>
+          </div>
+
+          <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4 mb-6">
+            <h3 class="text-white font-medium mb-2">✨ 明日鼓励</h3>
+            <p class="text-purple-200 text-sm">{{ tomorrowEncouragement }}</p>
+          </div>
+
+          <button @click="showGoodnight = false" class="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all">
+            晚安，做个好梦 💤
+          </button>
+        </div>
+      </div>
+
+      <div v-if="showMembership" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showMembership = false">
+        <div class="bg-white rounded-2xl w-full max-w-sm h-[80vh] flex flex-col">
+          <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">💎 会员中心</h3>
+            <button @click="showMembership = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <div class="flex-1 overflow-auto p-4">
+            <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-4 text-white mb-6 text-center">
+              <div class="text-sm opacity-80 mb-1">当前会员</div>
+              <div class="text-2xl font-bold">免费版</div>
+              <div class="text-xs opacity-80 mt-1">Lv.1 · 基础功能</div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="border-2 border-green-500 rounded-xl p-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-green-500 text-white text-xs px-2 py-0.5">推荐</div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-2xl">💫</span>
+                  <div>
+                    <div class="font-bold text-gray-800">体验日卡</div>
+                    <div class="text-xs text-gray-500">1天体验所有会员功能</div>
+                  </div>
+                </div>
+                <div class="flex items-end gap-1 mb-3">
+                  <span class="text-sm text-gray-500">¥</span>
+                  <span class="text-3xl font-bold text-green-600">3.9</span>
+                </div>
+                <button class="w-full py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">
+                  立即购买
+                </button>
+              </div>
+
+              <div class="border border-gray-200 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-2xl">🌙</span>
+                  <div>
+                    <div class="font-bold text-gray-800">周卡</div>
+                    <div class="text-xs text-gray-500">7天无限畅玩</div>
+                  </div>
+                </div>
+                <div class="flex items-end gap-1 mb-3">
+                  <span class="text-sm text-gray-500">¥</span>
+                  <span class="text-2xl font-bold text-indigo-600">19.9</span>
+                  <span class="text-xs text-gray-400 line-through">¥29.9</span>
+                </div>
+                <button class="w-full py-2 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition-colors">
+                  立即购买
+                </button>
+              </div>
+
+              <div class="border border-gray-200 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-2xl">⭐</span>
+                  <div>
+                    <div class="font-bold text-gray-800">月卡</div>
+                    <div class="text-xs text-gray-500">30天无限畅玩+语音通话</div>
+                  </div>
+                </div>
+                <div class="flex items-end gap-1 mb-3">
+                  <span class="text-sm text-gray-500">¥</span>
+                  <span class="text-2xl font-bold text-purple-600">69</span>
+                  <span class="text-xs text-gray-400 line-through">¥99</span>
+                </div>
+                <button class="w-full py-2 bg-purple-500 text-white font-semibold rounded-lg hover:bg-purple-600 transition-colors">
+                  立即购买
+                </button>
+              </div>
+
+              <div class="border border-gray-200 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-2xl">👑</span>
+                  <div>
+                    <div class="font-bold text-gray-800">年卡</div>
+                    <div class="text-xs text-gray-500">365天无限畅玩+专属福利</div>
+                  </div>
+                </div>
+                <div class="flex items-end gap-1 mb-3">
+                  <span class="text-sm text-gray-500">¥</span>
+                  <span class="text-2xl font-bold text-amber-600">499</span>
+                  <span class="text-xs text-gray-400 line-through">¥799</span>
+                </div>
+                <button class="w-full py-2 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors">
+                  立即购买
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-6 bg-gray-50 rounded-xl p-4">
+              <h4 class="text-sm font-semibold text-gray-800 mb-3">会员权益对比</h4>
+              <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">AI对话次数</span>
+                  <div class="flex gap-4">
+                    <span class="text-gray-400">限次</span>
+                    <span class="text-green-500">无限</span>
+                    <span class="text-green-500">无限</span>
+                    <span class="text-green-500">无限</span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">语音通话</span>
+                  <div class="flex gap-4">
+                    <span class="text-gray-400">❌</span>
+                    <span class="text-gray-400">❌</span>
+                    <span class="text-green-500">✅</span>
+                    <span class="text-green-500">✅</span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">3D数字人</span>
+                  <div class="flex gap-4">
+                    <span class="text-gray-400">❌</span>
+                    <span class="text-gray-400">❌</span>
+                    <span class="text-green-500">✅</span>
+                    <span class="text-green-500">✅</span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">专属客服</span>
+                  <div class="flex gap-4">
+                    <span class="text-gray-400">❌</span>
+                    <span class="text-gray-400">❌</span>
+                    <span class="text-gray-400">❌</span>
+                    <span class="text-green-500">✅</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="showGoodnightGuide" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 text-center">
+          <div class="text-4xl mb-4">🌙</div>
+          <h3 class="text-lg font-bold text-gray-800 mb-2">今晚想听TA说晚安吗？</h3>
+          <p class="text-sm text-gray-500 mb-6">训练辛苦了，让{{ partner.name }}陪你放松一下吧</p>
+          <div class="flex gap-3">
+            <button @click="showGoodnightGuide = false; showGoodnight = true" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all">
+              听TA说晚安
+            </button>
+            <button @click="showGoodnightGuide = false" class="flex-1 py-3 bg-gray-100 text-gray-600 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+              下次再说
+            </button>
           </div>
         </div>
       </div>
@@ -1154,6 +1399,107 @@
         const showGoodnight = ref(false)
         const showPartnerMoment = ref(false)
         const todayTaskCompleted = ref(false)
+        const showMembership = ref(false)
+        const showGoodnightGuide = ref(false)
+
+        const goodnightMessages = [
+          '今天辛苦了，好好休息吧。愿你今晚有个甜甜的梦，明天又是充满希望的一天。',
+          '夜深了，记得盖好被子。无论今天发生了什么，明天都是新的开始，晚安。',
+          '愿月光温柔地陪伴你入睡，所有的烦恼都留在今天，晚安好梦。',
+          '今天的你已经很棒了，好好放松一下。明天醒来，又是元气满满的一天！',
+          '夜幕降临，是时候给自己一个拥抱了。晚安，愿你梦里有星辰大海。',
+          '把今天的疲惫都放下，闭上眼睛，享受这宁静的夜晚。晚安，好梦。'
+        ]
+
+        const goodnightContent = computed(() => {
+          return goodnightMessages[Math.floor(Math.random() * goodnightMessages.length)]
+        })
+
+        const isPlaying = ref(false)
+        const affectionGainToday = ref(0)
+        const progressDays = ref(7)
+
+        const progressData = computed(() => {
+          const days = progressDays.value
+          const data = []
+          const today = new Date()
+          const baseScore = 50
+
+          for (let i = days - 1; i >= 0; i--) {
+            const date = new Date(today)
+            date.setDate(date.getDate() - i)
+            const dayLabel = days === 7 ? ['日', '一', '二', '三', '四', '五', '六'][date.getDay()] : `${date.getMonth() + 1}/${date.getDate()}`
+            const randomVariation = Math.floor(Math.random() * 20) - 5
+            const trend = Math.floor(i * 3)
+            const score = Math.min(100, Math.max(30, baseScore + trend + randomVariation))
+
+            data.push({
+              label: dayLabel,
+              score: score
+            })
+          }
+          return data
+        })
+
+        const averageImprovement = computed(() => {
+          if (progressData.value.length < 2) return 0
+          const first = progressData.value[0].score
+          const last = progressData.value[progressData.value.length - 1].score
+          return Math.round((last - first) / progressData.value.length * 10) / 10
+        })
+
+        const partnerMessageType = ref('weekly')
+        const partnerMessageIndex = ref(0)
+
+        const weeklyMessages = [
+          '这一周你进步了很多，每一次训练都是在突破自己。继续保持，我相信你会越来越棒！',
+          '看到你这周这么努力，我真的很开心。记住，每一步都在靠近更好的自己。',
+          '这周的你闪闪发光，无论是训练还是聊天都越来越自然了。继续加油哦！',
+          '和你一起度过的这一周很美好，看着你一点点成长，我也很有成就感。下周见！',
+          '这周你完成了不少训练，社交能力提升得很快。相信自己，你比想象中更优秀。'
+        ]
+
+        const monthlyMessages = [
+          '回顾这一个月，你真的成长了很多。从刚开始的紧张到现在的从容，每一步都值得骄傲！',
+          '一个月的陪伴，看到你越来越自信，我真的很欣慰。愿我们一起走过更多美好的时光。',
+          '这一个月里，你学会了很多社交技巧，也变得更加开朗了。继续保持这份热情！',
+          '时间过得真快，我们已经相伴一个月了。谢谢你愿意和我分享你的成长故事。',
+          '这个月的你收获满满，不仅提升了社交能力，也找到了属于自己的节奏。继续前行！'
+        ]
+
+        const partnerMessage = computed(() => {
+          const messages = partnerMessageType.value === 'weekly' ? weeklyMessages : monthlyMessages
+          return messages[partnerMessageIndex.value % messages.length]
+        })
+
+        const partnerMessageDate = computed(() => {
+          const now = new Date()
+          return `${now.getMonth() + 1}月${now.getDate()}日`
+        })
+
+        const regeneratePartnerMessage = () => {
+          partnerMessageIndex.value++
+        }
+
+        const tomorrowEncouragements = [
+          '明天也要加油哦！相信自己，你比想象中更优秀。',
+          '新的一天，新的机会。保持微笑，好运会来找你。',
+          '每一步都在靠近更好的自己，明天继续发光吧！',
+          '无论遇到什么困难，记得你不是一个人。我会一直在你身边。',
+          '明天的你会比今天更棒，相信这个美好的可能。',
+          '带着希望入睡，带着勇气醒来。明天见！'
+        ]
+
+        const tomorrowEncouragement = computed(() => {
+          return tomorrowEncouragements[Math.floor(Math.random() * tomorrowEncouragements.length)]
+        })
+
+        const playGoodnightAudio = () => {
+          isPlaying.value = true
+          setTimeout(() => {
+            isPlaying.value = false
+          }, 5000)
+        }
 
         const triggerPartnerAnimation = () => {
           const animations = ['✨', '💫', '🌟', '💕', '💖']
@@ -1682,6 +2028,11 @@
 
           showTrainingReport.value = true
           trainingFinished.value = true
+
+          const hour = new Date().getHours()
+          if (hour >= 18) {
+            showGoodnightGuide.value = true
+          }
         }
 
         const generateTrainingReport = () => {
@@ -2023,7 +2374,9 @@
           showRoundOptions, finishTraining, generateTrainingReport, generateEmotionDiary, checkSceneUnlocks, updateWeeklyReport,
           generateDailyMoment, likeMoment, addComment, revealPreference, checkRelationshipCrisis, resolveCrisis,
           performTalent, learningCards, collectedCards, showCards, collectCard, useTimeRewind,
-          milestones
+          milestones, goodnightContent, isPlaying, affectionGainToday, tomorrowEncouragement, playGoodnightAudio,
+          showMembership, progressDays, progressData, averageImprovement,
+          partnerMessageType, partnerMessage, partnerMessageDate, regeneratePartnerMessage
         }
       }
     }).mount('#app')
